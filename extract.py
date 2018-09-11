@@ -15,6 +15,7 @@ class extract:
     import with:
     from CleftAnalysis import extract
     
+    ------------------------------
     to initiate the class call e.g.
     f = extract.extract(folder_num, subfolder_name, values)
     where:
