@@ -1,5 +1,8 @@
 """
-Class Script with functions for the spark Analysis (later may be also for the evaluation)
+Class Script with functions for the Analysis (later may be also for the evaluation)
+
+import with:
+from CleftAnalysis import functions
 """
 
 # Imports

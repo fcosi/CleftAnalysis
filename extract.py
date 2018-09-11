@@ -11,14 +11,27 @@ class extract:
     other arguments are:
     - long cont folder (standard value False)
     - which file to extract (standard is ionicmodel.txt)    
+    
+    import with:
+    from CleftAnalysis import extract
+    
+    to initiate the class call e.g.
+    f = extract.extract(folder_num, subfolder_name, values)
+    where:
+    folder_num : number of the generated cleftdyn folder
+    subfolder_name : string of the possible subfolder. If nothing specified, then no subfolder set
+                     numerical values possible: 0 and 1 are special cases defined in determineFolder
+    values : name or name snippet of the values to be extracted
+   
     """
     
-    def __init__(self, folder_num, long_cont = False, values = "ionic"):
+    def __init__(self, folder_num, subfolder = False, values = "ionic"):
         self.folder = folder_num
+        # setFolder var ensures a folder is not initiated twice
         self.setFolder = False        
         
-        self.long_cont = long_cont
-        self.determineIfLong()
+        self.subfolder = subfolder
+        self.determineFolder()
         
         self.values = values
         self.determineValues()
@@ -40,18 +53,29 @@ class extract:
 
     def printInfo(self):
         print("extraction folder: ", self.folder,
-              "\nis it a continuation from long simulations? ", self.long_cont)
+              "\nis it a continuation from long simulations? If yes, which? ", self.subfolder)
 
-    def folderDefinition(self):
-        if (not self.setFolder and not self.long_cont):
+    def folderDefinition(self, new_folder = ""):
+        if (not self.setFolder and not self.subfolder):
             self.folder = "../" + str(self.folder) + "/"
             self.setFolder = True
-        elif (not self.setFolder and self.long_cont):
+        elif (not self.setFolder and (self.subfolder == True)):
             self.folder = "../long-cont/" + str(self.folder) + "/"
+            self.setFolder = True
+        elif (not self.setFolder and (type(self.subfolder) == str)):
+            self.folder = "../" + self.subfolder + "/" + str(self.folder) + "/"
             self.setFolder = True
         else:
             print("folder already set or not valid")
-    
+
+    def determineFolder(self):
+        if (self.subfolder == 0):
+            self.subfolder = False
+        elif (self.subfolder == 1):
+            self.subfolder = True
+        else:
+            self.subfolder = self.subfolder
+
     def getParameters(self):
         final_param = pd.DataFrame()
         param = pd.read_csv(self.folder + "parameters.txt", sep="=", index_col=0).T
@@ -64,15 +88,7 @@ class extract:
             except KeyError:
                 #print(val, " raised an key error")
                 pass
-        return final_param
-
-    def determineIfLong(self):
-        if (self.long_cont == 0):
-            self.long_cont = False
-        elif (self.long_cont == 1):
-            self.long_cont = True
-        else:
-            self.long_cont = self.long_cont        
+        return final_param       
 
     def determineValues(self):
         if ((self.values == "ionic") or (self.values == "ionicmodel") or
