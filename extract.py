@@ -39,6 +39,7 @@ class extract:
         
         self.folderDefinition()
         self.printInfo()
+        self.param = self.getParam()
 
     def read(self):
         var = pd.read_csv(self.folder + self.values, delim_whitespace = True)
@@ -77,7 +78,7 @@ class extract:
         else:
             self.subfolder = self.subfolder
 
-    def getParameters(self):
+    def getParam(self):
         final_param = pd.DataFrame()
         param = pd.read_csv(self.folder + "parameters.txt", sep="=", index_col=0).T
         for val in param:
@@ -90,6 +91,12 @@ class extract:
                 #print(val, " raised an key error")
                 pass
         return final_param       
+
+    def getParameters(self):
+        return self.param
+
+    def crusInfo(self):
+        crunumber = int(self.param["z_discs"][0]*self.param["crus_per_sec_line"][0]**2 - 4)
 
     def determineValues(self):
         if ((self.values == "ionic") or (self.values == "ionicmodel") or
