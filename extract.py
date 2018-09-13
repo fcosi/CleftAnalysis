@@ -96,7 +96,22 @@ class extract:
         return self.param
 
     def crusInfo(self):
+        '''
+        fct to get total number of RyR and LCCs
+        output are lists of the two channel types
+        '''
         crunumber = int(self.param["z_discs"][0]*self.param["crus_per_sec_line"][0]**2 - 4)
+        ryr_numbers = []
+        lcc_numbers = []
+        for i in range(crunumber):
+            crufile = open(self.folder + "clefts/cleft" + str(i) + ".log")
+            cruinfo = crufile.readline()
+            crufile.close()
+            cruinfo = cruinfo.split(" ")
+            # append number of RyR and LCCs to list
+            ryr_numbers.append(int(cruinfo[0]))
+            lcc_numbers.append(int(cruinfo[2]))
+        return ryr_numbers, lcc_numbers
 
     def determineValues(self):
         if ((self.values == "ionic") or (self.values == "ionicmodel") or
