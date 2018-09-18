@@ -79,7 +79,7 @@ class extract:
             print("folder changed to: " + new_folder)
             self.folder = new_folder
         else:
-            print("folder already set or not valid")
+            print("folder already set to: " + self.folder + " or not valid")
 
     def determineFolder(self):
         ''''

@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 
 class SparkAnalysis:
     """
-    class where to store analysis functions
+    store analysis functions for the spark analysis
     """
     
     def __init__(self, folder):
@@ -61,6 +61,14 @@ class SparkAnalysis:
 # ----------------------------------------------------------------------------------------------
 
     def get_linescan_info(self, spark_no = 1, duration = 1):
+        '''
+        return time, cru_id, scan_direction and scan_direction_pos of a linescan
+        
+        Args
+        ----------
+        spark_no: spark id
+        duration: time interval in ms from which to take the spark data
+        '''
         # check spark number is lower than len(spark_candidates_startTimes)
         frames_linescan = []
         spark_candidates_startTimes, spark_candidates_endTimes = self.getSparkStartEndTimes(duration)
@@ -98,7 +106,7 @@ class SparkAnalysis:
 
     def plotLineScan(self, species = "cyto_ca2+", spark_no = 1, duration = 1):
         """
-        Function to plot the linescan given a species, a spark number and the spark duration
+        plot the linescan given a species, a spark number and the spark duration
         DISCLAIMER: depending on file size could take long to plot!
         """
         linescan_all = self.get_linescan_info(spark_no, duration)
@@ -245,6 +253,9 @@ class SparkAnalysis:
 # ----------------------------------------------------------------------------------------------
 
     def mem_usage(self, pandas_obj):
+        '''
+        return mem_usage given a pandas object
+        '''
         if isinstance(pandas_obj,pd.DataFrame):
             usage_b = pandas_obj.memory_usage(deep=True).sum()
         else: # we assume if not a df it's a series
@@ -258,19 +269,19 @@ class SparkAnalysis:
 
 class Analysis:
     """
-    Class for plotting 3 figs vs time
+    Analyse AP simulations
     """
 
     def __init__ (self):
         """
-        Constructor of the main analysis class
+        Constructor of the main analysis class (still empty)
         """
 
     def threshold_crossings(self, series, threshold, return_derivatives=False):
-        """Finds all up and down threshold crossings within the series using
+        """Find all up and down threshold crossings within the series using
         linear interpolation. (adapted from caostk)
         
-        Parameters
+        Args
         ----------
         series : {N,} ndarray
         Time series (or similar) in which to find threshold crossings.
@@ -309,7 +320,8 @@ class Analysis:
 # ----------------------------------------------------------------------------------------------
 
     def APDHM(self, times, series):
-        """Computes the APD at half maximum of a given series using the threshold_crossings fct
+        """
+        Compute the APD at half maximum of a given series using the threshold_crossings fct
         given the times and the series
         
         Parameters
