@@ -54,10 +54,18 @@ class extract:
         return self.read()
 
     def printInfo(self):
+        '''
+        print info when initiating class
+        '''
         print("extraction folder: ", self.folder,
               "\nis it a continuation from long simulations? If yes, which? ", self.subfolder)
 
     def folderDefinition(self, new_folder = ""):
+        '''
+        set folder from which to extract data
+        Args:
+        new_folder: if set can allow changing the actual folder
+        '''
         if (not self.setFolder and not self.subfolder):
             self.folder = "../" + str(self.folder) + "/"
             self.setFolder = True
@@ -67,10 +75,16 @@ class extract:
         elif (not self.setFolder and (type(self.subfolder) == str)):
             self.folder = "../" + self.subfolder + "/" + str(self.folder) + "/"
             self.setFolder = True
+        elif (self.setFolder and new_folder):
+            print("folder changed to: " + new_folder)
+            self.folder = new_folder
         else:
             print("folder already set or not valid")
 
     def determineFolder(self):
+        ''''
+        look for subfolder arg and set it if found
+        '''
         if (self.subfolder == 0):
             self.subfolder = False
         elif (self.subfolder == 1):
@@ -79,16 +93,17 @@ class extract:
             self.subfolder = self.subfolder
 
     def getParam(self):
+        '''
+        get dataframe of parameters from parameter file of cleftdyn (use var names as keys)
+        '''
         final_param = pd.DataFrame()
         param = pd.read_csv(self.folder + "parameters.txt", sep="=", index_col=0).T
         for val in param:
             try:
                 final_param[val] = [float(param[val][0])]
             except ValueError:
-                #print(val, " has no numerical value")
                 pass
             except KeyError:
-                #print(val, " raised an key error")
                 pass
         return final_param       
 
@@ -97,7 +112,7 @@ class extract:
 
     def crusInfo(self):
         '''
-        fct to get total number of RyR and LCCs
+        get total number of RyR and LCCs
         output are lists of the two channel types
         '''
         crunumber = int(self.param["z_discs"][0]*self.param["crus_per_sec_line"][0]**2 - 4)
