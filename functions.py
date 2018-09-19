@@ -13,6 +13,7 @@ import re as re
 import pandas as pd
 import scipy as sp
 import scipy.stats
+from scipy.signal import argrelextrema
 
 import matplotlib.pyplot as plt
 
@@ -350,4 +351,37 @@ class Analysis:
                 warnings.warn("The time series might be discontinous.\nFound downstroke with no preceeding upstroke. \t This function might be unsuited for the APD computation")                
                 down = down[:-1]
         return (times[down] - times[up])
+    
+    
+    def get_peaks(self, times, series, smooth = 1000, time_threshold = 100):
+        """
+            Computes peaks in series and returns the corresponding peak values and timepoints
+        
+        Parameters
+        ----------
+        - times
+        - series
+        - smooth (optional, determines the size of neighborhood for local peak search)
+        - threshold (optional, minimum time between two peaks)
+        
+        Returns
+        ----------
+        - apd: ndarray 
+        Array of peak times
+        """
+        series = np.array(series)
+        times = np.array(times)
+        
+        times_maxima = times[argrelextrema(series, np.greater_equal, order=smooth)]
+        #times_minima = times[argrelextrema(series, np.less_equal, order=smooth)]
+        peaks_maxima = series[argrelextrema(series, np.greater_equal, order=smooth)]
+        #peaks_minima = series[argrelextrema(series, np.less_equal, order=smooth)]
+     
+     
+        min_diff = min([abs(j-i) for i,j in zip(times_maxima, times_maxima[1:])]) 
+
+        if (min_diff > time_threshold):
+            import warnings
+            warnings.warn("The time series might be discontinous.\nFound more than peak in a small time intervall. \t Please increase the smoothing factor!")                
+        return times_maxima, peaks_maxima
 
