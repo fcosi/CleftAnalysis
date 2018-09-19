@@ -352,6 +352,39 @@ class Analysis:
                 down = down[:-1]
         return (times[down] - times[up])
     
+    def APDX(self, times, series, percent = 90.0):
+        """
+        Compute the APD at (percent) % of a given series using the threshold_crossings fct
+        given the times and the series. For instance, for percent = 90.0 the APD_90 values are computed.
+        
+        Parameters
+        ----------
+        - times
+        - series
+        - percent 
+        
+        Returns
+        ----------
+        - apd: ndarray 
+        Array of the APDs
+        """
+        series = np.array(series)
+        times = np.array(times)
+        xm = (np.max(series) + np.min(series))*percent/100.0
+        up, down = self.threshold_crossings(series, xm)       
+        # remove all array entries exceeding other array
+        # first a down is not allowed
+        if (down[0] < up[0]):
+            down = down[1:]        
+        while(up.size != down.size):
+            if (up.size > down.size):
+                up = up[:-1]
+            else:
+                import warnings
+                warnings.warn("The time series might be discontinous.\nFound downstroke with no preceeding upstroke. \t This function might be unsuited for the APD computation")                
+                down = down[:-1]
+        return (times[down] - times[up])
+    
     
     def get_peaks(self, times, series, smooth = 1000, time_threshold = 100):
         """
@@ -373,8 +406,8 @@ class Analysis:
         times = np.array(times)
         
         times_maxima = times[argrelextrema(series, np.greater_equal, order=smooth)]
-        #times_minima = times[argrelextrema(series, np.less_equal, order=smooth)]
         peaks_maxima = series[argrelextrema(series, np.greater_equal, order=smooth)]
+        #times_minima = times[argrelextrema(series, np.less_equal, order=smooth)]
         #peaks_minima = series[argrelextrema(series, np.less_equal, order=smooth)]
      
      
