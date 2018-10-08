@@ -372,8 +372,38 @@ class Analysis:
                 down = down[:-1]
         return (times[down] - times[up])
     
+    def get_max_Vm(self, times, series):
+        """
+        Computes the maximum voltage of the membrane potential from a series of time points and corresponding membrane potential values
+        
+        Parameters
+        ----------
+        - times
+        - series
+        
+        Returns
+        ----------
+        - minimum of series (scalar float value)
+        """
+        return np.max(series)
+
+    def get_rest_Vm(self, times, series):
+        """
+        Computes the resting voltage of the membrane potential from a series of time points and corresponding membrane potential values
+        
+        Parameters
+        ----------
+        - times
+        - series
+        
+        Returns
+        ----------
+        - minimum of series (scalar float value)
+        """
+        return np.min(series)    
     
-    def get_peaks(self, times, series, smooth = 1000, time_threshold = 100):
+    
+    def get_Ca_peaks(self, times, series, smooth = 1000, time_threshold = 100):
         """
             Computes peaks in series and returns the corresponding peak values and timepoints
         
