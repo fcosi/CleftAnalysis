@@ -435,6 +435,39 @@ class Analysis:
         """
         return np.min(series)    
     
+    def get_max_dVdt(self, times, series, order = 2):
+        """
+        Compute maximum dVdt of a given series by using a first or second order approximation of the derivative
+        
+        Parameters
+        ----------
+        - times
+        - series
+        - order (optional)
+          
+        Returns
+        ----------
+        - the max direvative of the membrane potential dVdt
+        """
+        max_dVdt = -1.0
+                
+        for i in range(len(series) - order):
+            
+            dVdt = -1.0
+            
+            if order == 1:
+                dVdt = (series[i+1] -series[i])/(times[i+1] - times[i])
+            if order == 2:
+                dVdt = ( - 3.0*series[i] + 4.0*series[i+1] - series[i+2])/(times[i+2] - times[i])
+            #alternative (smoother first order)
+            #if order == 2:
+            #    dVdt = (series[i+2] -series[i])/(times[i+2] - times[i])
+            
+            if (dVdt > max_dVdt):
+                max_dVdt = dVdt
+  
+        return max_dVdt
+    
     
     def get_Ca_peaks(self, times, series, smooth = 1000, time_threshold = 100):
         """
