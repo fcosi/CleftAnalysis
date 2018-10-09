@@ -371,6 +371,39 @@ class Analysis:
                 warnings.warn("The time series might be discontinous.\nFound downstroke with no preceeding upstroke. \t This function might be unsuited for the APD computation")                
                 down = down[:-1]
         return (times[down] - times[up])
+
+    def get_DI(self, times, series):
+        """
+        Compute the DI of a given series using the threshold_crossings fct
+        given the times and the series.
+        
+        Parameters
+        ----------
+        - times
+        - series
+          
+        Returns
+        ----------
+        - apd: ndarray 
+        Array of the DIs
+        """
+        percent = 95.0
+        series = -np.array(series)
+        times = np.array(times)
+        xm = (np.max(series) + np.min(series))*percent/100.0
+        up, down = self.threshold_crossings(series, xm)       
+        # remove all array entries exceeding other array
+        # first a down is not allowed
+        if (down[0] < up[0]):
+            down = down[1:]        
+        while(up.size != down.size):
+            if (up.size > down.size):
+                up = up[:-1]
+            else:
+                import warnings
+                warnings.warn("The time series might be discontinous.\nFound downstroke with no preceeding upstroke. \t This function might be unsuited for the APD computation")                
+                down = down[:-1]
+        return (times[down] - times[up])
     
     def get_max_Vm(self, times, series):
         """
