@@ -440,7 +440,8 @@ class Analysis:
         - minimum of series (scalar float value)
         """
         return np.min(series)    
-<<<<<<< HEAD
+
+# ----------------------------------------------------------------------------------------------
     
     def get_max_dVdt(self, times, series, scheme = 3):
         """
@@ -476,15 +477,41 @@ class Analysis:
   
         return max_dVdt
     
-    
-=======
+# ----------------------------------------------------------------------------------------------
+
+    def get_dome_Vm(self, times, series, smooth = 100):
+        """
+        Computes domes in a membrane potential series and returns the corresponding Vm values and timepoints
+        
+        Parameters
+        ----------
+        - times
+        - series
+        - smooth (optional, determines the size of neighborhood for local peak search)
+        
+        Returns
+        ----------
+        - value of dome Vm
+        """
+        
+        series = np.array(series)
+        times = np.array(times)
+        
+        times_maxima = times[argrelextrema(series, np.greater_equal, order=smooth)]
+        Vm_maxima = series[argrelextrema(series, np.greater_equal, order=smooth)]
+        
+        Vm_maxima = Vm_maxima[Vm_maxima>0.0]
+
+        #TODO: revise that code and include exceptions
+        Vm_dome = min(Vm_maxima)
+
+        return Vm_dome
 
 # ----------------------------------------------------------------------------------------------
 
->>>>>>> 4fb66ea15a7170c5c8815077305b3f62cc1e4c89
     def get_Ca_peaks(self, times, series, smooth = 1000, time_threshold = 100):
         """
-            Computes peaks in series and returns the corresponding peak values and timepoints
+        Computes peaks in series and returns the corresponding peak values and timepoints
         
         Parameters
         ----------
@@ -498,6 +525,7 @@ class Analysis:
         - apd: ndarray 
         Array of peak times
         """
+        
         series = np.array(series)
         times = np.array(times)
         
