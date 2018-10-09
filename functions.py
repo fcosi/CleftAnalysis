@@ -372,6 +372,8 @@ class Analysis:
                 down = down[:-1]
         return (times[down] - times[up])
 
+# ----------------------------------------------------------------------------------------------
+
     def get_DI(self, times, series):
         """
         Compute the DI of a given series using the threshold_crossings fct
@@ -404,7 +406,9 @@ class Analysis:
                 warnings.warn("The time series might be discontinous.\nFound downstroke with no preceeding upstroke. \t This function might be unsuited for the APD computation")                
                 down = down[:-1]
         return (times[down] - times[up])
-    
+
+# ----------------------------------------------------------------------------------------------
+
     def get_max_Vm(self, times, series):
         """
         Computes the maximum voltage of the membrane potential from a series of time points and corresponding membrane potential values
@@ -420,6 +424,8 @@ class Analysis:
         """
         return np.max(series)
 
+# ----------------------------------------------------------------------------------------------
+
     def get_rest_Vm(self, times, series):
         """
         Computes the resting voltage of the membrane potential from a series of time points and corresponding membrane potential values
@@ -434,8 +440,9 @@ class Analysis:
         - minimum of series (scalar float value)
         """
         return np.min(series)    
-    
-    
+
+# ----------------------------------------------------------------------------------------------
+
     def get_Ca_peaks(self, times, series, smooth = 1000, time_threshold = 100):
         """
             Computes peaks in series and returns the corresponding peak values and timepoints

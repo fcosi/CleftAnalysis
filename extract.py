@@ -137,4 +137,7 @@ class extract:
               (self.values == "massconversionlog")):
             self.values = "massconversionlog.txt"
         else:
-            print("no considered/implemented value, skip")        
+            print("no considered/implemented value, skip")
+
+
+        
