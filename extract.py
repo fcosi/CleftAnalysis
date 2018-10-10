@@ -4,6 +4,8 @@
 
 import pandas as pd
 import os as os
+import re as re
+import glob as glob
 
 class extract:
     """
@@ -139,5 +141,24 @@ class extract:
         else:
             print("no considered/implemented value, skip")
 
-
+    def get_openCRUs(self, year=2018):
+        """
+        Gets the number of open crus from the outputfile (year is the starting name of the file)
+        also gets the according times
         
+        Output:
+        - list of time steps
+        - list of open crus
+        """
+        out_file = self.folder + str(year) + "*"
+        out_file = glob.glob(out_file)[0]
+        time = []
+        crus = []
+        match = " number of open crus: "
+        with open(out_file, "r") as fp:
+            time_lines = [line for line in fp if match in line]
+        for line in time_lines:
+            nums = re.findall("\d+", line)
+            time.append(float(nums[0] + "." + nums[1]))
+            crus.append(int(nums[2]))
+        return time, crus
