@@ -442,10 +442,76 @@ class Analysis:
         return np.min(series)    
 
 # ----------------------------------------------------------------------------------------------
+    
+    def get_max_dVdt(self, times, series, scheme = 3):
+        """
+        Compute maximum dVdt of a given series by using a first or second order approximation of the derivative
+        
+        Parameters
+        ----------
+        - times
+        - series
+        - order (optional)
+          
+        Returns
+        ----------
+        - the max direvative of the membrane potential dVdt
+        """
+        max_dVdt = -1.0
+                
+        for i in range(len(series) - 2):
+            
+            dVdt = -1.0
+            
+            if scheme == 1: #first order
+                dVdt = (series[i+1] -series[i])/(times[i+1] - times[i])
+            if scheme == 2: #smoothed, first order
+                dVdt = (series[i+2] -series[i])/(times[i+2] - times[i])
+            if scheme == 3: #smoothed, second order
+                dVdt = ( - 3.0*series[i] + 4.0*series[i+1] - series[i+2])/(times[i+2] - times[i])
+            
+
+            
+            if (dVdt > max_dVdt):
+                max_dVdt = dVdt
+  
+        return max_dVdt
+    
+# ----------------------------------------------------------------------------------------------
+
+    def get_dome_Vm(self, times, series, smooth = 100):
+        """
+        Computes domes in a membrane potential series and returns the corresponding Vm values and timepoints
+        
+        Parameters
+        ----------
+        - times
+        - series
+        - smooth (optional, determines the size of neighborhood for local peak search)
+        
+        Returns
+        ----------
+        - value of dome Vm
+        """
+        
+        series = np.array(series)
+        times = np.array(times)
+        
+        times_maxima = times[argrelextrema(series, np.greater_equal, order=smooth)]
+        Vm_maxima = series[argrelextrema(series, np.greater_equal, order=smooth)]
+        
+        Vm_maxima = Vm_maxima[Vm_maxima>0.0]
+
+        #TODO: revise that code and include exceptions
+        Vm_dome = min(Vm_maxima)
+
+        return Vm_dome
+
+# ----------------------------------------------------------------------------------------------
 
     def get_Ca_peaks(self, times, series, smooth = 1000, time_threshold = 100):
         """
-            Computes peaks in series and returns the corresponding peak values and timepoints
+        Computes peaks in series and returns the corresponding peak values and timepoints
         
         Parameters
         ----------
@@ -459,6 +525,7 @@ class Analysis:
         - apd: ndarray 
         Array of peak times
         """
+        
         series = np.array(series)
         times = np.array(times)
         
