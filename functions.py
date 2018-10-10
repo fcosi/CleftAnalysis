@@ -420,7 +420,7 @@ class Analysis:
         
         Returns
         ----------
-        - minimum of series (scalar float value)
+        - maximum of series (scalar float value)
         """
         return np.max(series)
 
