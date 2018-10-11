@@ -339,7 +339,7 @@ class Analysis:
 
 # ----------------------------------------------------------------------------------------------
     
-    def APD(self, times, series, percent = 50.0):
+    def APD(self, times, series, percent = 50.0, start_time = -np.infty, end_time = np.infty):
         """
         Compute the APD at (percent) % of a given series using the threshold_crossings fct
         given the times and the series. For instance, for percent = 90.0 the APD_90 values are computed.
@@ -354,9 +354,17 @@ class Analysis:
         ----------
         - apd: ndarray 
         Array of the APDs
-        """
+        """        
         series = np.array(series)
         times = np.array(times)
+        
+        #extract values of series between start_time and end_time 
+        series = series[times > start_time]
+        times = times[times > start_time]
+        series = series[times < end_time] 
+        times = times[times < end_time]
+        
+        
         xm = (np.max(series) + np.min(series))*percent/100.0
         up, down = self.threshold_crossings(series, xm)       
         # remove all array entries exceeding other array
@@ -374,7 +382,7 @@ class Analysis:
 
 # ----------------------------------------------------------------------------------------------
 
-    def get_DI(self, times, series):
+    def get_DI(self, times, series, start_time = -np.infty, end_time = np.infty):
         """
         Compute the DI of a given series using the threshold_crossings fct
         given the times and the series.
@@ -392,6 +400,14 @@ class Analysis:
         percent = 95.0
         series = -np.array(series)
         times = np.array(times)
+        
+        #extract values of series between start_time and end_time 
+        series = series[times > start_time]
+        times = times[times > start_time]
+        series = series[times < end_time] 
+        times = times[times < end_time]
+        
+        
         xm = (np.max(series) + np.min(series))*percent/100.0
         up, down = self.threshold_crossings(series, xm)       
         # remove all array entries exceeding other array
@@ -409,7 +425,7 @@ class Analysis:
 
 # ----------------------------------------------------------------------------------------------
 
-    def get_max_Vm(self, times, series):
+    def get_max_Vm(self, times, series, start_time = -np.infty, end_time = np.infty):
         """
         Computes the maximum voltage of the membrane potential from a series of time points and corresponding membrane potential values
         
@@ -422,11 +438,22 @@ class Analysis:
         ----------
         - maximum of series (scalar float value)
         """
+        
+        series = np.array(series)
+        times = np.array(times)
+        
+        #extract values of series between start_time and end_time 
+        series = series[times > start_time]
+        times = times[times > start_time]
+        series = series[times < end_time] 
+        times = times[times < end_time]
+        
+        
         return np.max(series)
 
 # ----------------------------------------------------------------------------------------------
 
-    def get_rest_Vm(self, times, series):
+    def get_rest_Vm(self, times, series, start_time = -np.infty, end_time = np.infty):
         """
         Computes the resting voltage of the membrane potential from a series of time points and corresponding membrane potential values
         
@@ -439,11 +466,21 @@ class Analysis:
         ----------
         - minimum of series (scalar float value)
         """
+        
+        series = np.array(series)
+        times = np.array(times)
+        
+        #extract values of series between start_time and end_time 
+        series = series[times > start_time]
+        times = times[times > start_time]
+        series = series[times < end_time] 
+        times = times[times < end_time]
+        
         return np.min(series)    
 
 # ----------------------------------------------------------------------------------------------
     
-    def get_max_dVdt(self, times, series, scheme = 3):
+    def get_max_dVdt(self, times, series, scheme = 3, start_time = -np.infty, end_time = np.infty):
         """
         Compute maximum dVdt of a given series by using a first or second order approximation of the derivative
         
@@ -457,20 +494,28 @@ class Analysis:
         ----------
         - the max direvative of the membrane potential dVdt
         """
+        
+        series = np.array(series)
+        times = np.array(times)
+        
+        #extract values of series between start_time and end_time 
+        series = series[times > start_time]
+        times = times[times > start_time]
+        series = series[times < end_time] 
+        times = times[times < end_time]
+        
         max_dVdt = -1.0
                 
         for i in range(len(series) - 2):
             
             dVdt = -1.0
             
-            if scheme == 1: #first order
+            if scheme == 1: # first order scheme
                 dVdt = (series[i+1] -series[i])/(times[i+1] - times[i])
-            if scheme == 2: #smoothed, first order
+            if scheme == 2: # smoothed, first order scheme
                 dVdt = (series[i+2] -series[i])/(times[i+2] - times[i])
-            if scheme == 3: #smoothed, second order
+            if scheme == 3: # second order scheme
                 dVdt = ( - 3.0*series[i] + 4.0*series[i+1] - series[i+2])/(times[i+2] - times[i])
-            
-
             
             if (dVdt > max_dVdt):
                 max_dVdt = dVdt
@@ -479,7 +524,7 @@ class Analysis:
     
 # ----------------------------------------------------------------------------------------------
 
-    def get_dome_Vm(self, times, series, smooth = 100):
+    def get_dome_Vm(self, times, series, smooth = 100, start_time = -np.infty, end_time = np.infty):
         """
         Computes domes in a membrane potential series and returns the corresponding Vm values and timepoints
         
@@ -497,6 +542,12 @@ class Analysis:
         series = np.array(series)
         times = np.array(times)
         
+        #extract values of series between start_time and end_time 
+        series = series[times > start_time]
+        times = times[times > start_time]
+        series = series[times < end_time] 
+        times = times[times < end_time]
+        
         times_maxima = times[argrelextrema(series, np.greater_equal, order=smooth)]
         Vm_maxima = series[argrelextrema(series, np.greater_equal, order=smooth)]
         
@@ -509,7 +560,7 @@ class Analysis:
 
 # ----------------------------------------------------------------------------------------------
 
-    def get_Ca_peaks(self, times, series, smooth = 1000, time_threshold = 100):
+    def get_Ca_peaks(self, times, series, smooth = 1000, time_threshold = 100, start_time = -np.infty, end_time = np.infty):
         """
         Computes peaks in series and returns the corresponding peak values and timepoints
         
@@ -522,12 +573,17 @@ class Analysis:
         
         Returns
         ----------
-        - apd: ndarray 
-        Array of peak times
+        Tuple of arrays of peak times and peak values
         """
         
         series = np.array(series)
         times = np.array(times)
+        
+        #extract values of series between start_time and end_time 
+        series = series[times > start_time]
+        times = times[times > start_time]
+        series = series[times < end_time] 
+        times = times[times < end_time]
         
         times_maxima = times[argrelextrema(series, np.greater_equal, order=smooth)]
         peaks_maxima = series[argrelextrema(series, np.greater_equal, order=smooth)]
@@ -542,3 +598,57 @@ class Analysis:
             warnings.warn("The time series might be discontinous.\nFound more than peak in a small time intervall. \t Please increase the smoothing factor!")                
         return times_maxima, peaks_maxima
 
+    def get_Ca_sys_minima(self, times, series, smooth = 1000, time_threshold = 100, start_time = -np.infty, end_time = np.infty):
+        """
+        Computes minima during systole in series and returns the corresponding values and timepoints
+        
+        Parameters
+        ----------
+        - times
+        - series
+        - smooth (optional, determines the size of neighborhood for local minima search)
+        - threshold (optional, minimum time between two minima)
+        
+        Returns
+        ----------
+        Tuple of arrays of peak times and minima values
+        """
+            
+        times_, minima_ = self.get_Ca_peaks(times, -series, smooth = smooth, time_threshold = time_threshold, start_time = start_time, end_time = end_time)
+        return times_, -minima_
+    
+    def get_Ca_times_to_peak(self, times, series, smooth = 1000, time_threshold = 100, start_time = -np.infty, end_time = np.infty):
+        """
+        Computes the time needed from a calcium in diastole minima to the following maxima
+        
+        Parameters
+        ----------
+        - times
+        - series
+        - smooth (optional, determines the size of neighborhood for local minima search)
+        - threshold (optional, minimum time between two minima/peaks)
+        
+        Returns
+        ----------
+        Arrays of with times to peak
+        """
+        
+        series = np.array(series)
+        times = np.array(times)
+        
+        t_peaks, peaks = self.get_Ca_peaks(times, series, smooth = smooth, time_threshold = time_threshold, start_time=1000, end_time=6000)
+        t_min, minima = self.get_Ca_sys_minima(times, series, smooth = smooth, time_threshold = time_threshold, start_time=1000, end_time=6000)
+
+        if t_peaks[0] < t_min[0]:
+            t_peaks = np.delete(t_peaks, 0)
+
+        times_to_peak = []
+
+        for i in range(min(len(t_peaks),len(t_min)-1)):
+            if ((t_peaks[i] > t_min[i]) and (t_peaks[i] < t_min[i+1])):
+                times_to_peak.append(t_peaks[i] -t_min[i])
+            else:
+                import warnings
+                warnings.warn("Implement exception here!")   
+
+        return np.array(times_to_peak)
