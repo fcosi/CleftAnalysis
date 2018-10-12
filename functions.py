@@ -598,6 +598,8 @@ class Analysis:
             warnings.warn("The time series might be discontinous.\nFound more than peak in a small time intervall. \t Please increase the smoothing factor!")                
         return times_maxima, peaks_maxima
 
+# ----------------------------------------------------------------------------------------------
+
     def get_Ca_sys_minima(self, times, series, smooth = 1000, time_threshold = 100, start_time = -np.infty, end_time = np.infty):
         """
         Computes minima during systole in series and returns the corresponding values and timepoints
@@ -616,7 +618,9 @@ class Analysis:
             
         times_, minima_ = self.get_Ca_peaks(times, -series, smooth = smooth, time_threshold = time_threshold, start_time = start_time, end_time = end_time)
         return times_, -minima_
-    
+
+# ----------------------------------------------------------------------------------------------
+
     def get_Ca_times_to_peak(self, times, series, smooth = 1000, time_threshold = 100, start_time = -np.infty, end_time = np.infty):
         """
         Computes the time needed from a calcium in diastole minima to the following maxima
@@ -638,17 +642,17 @@ class Analysis:
         
         t_peaks, peaks = self.get_Ca_peaks(times, series, smooth = smooth, time_threshold = time_threshold, start_time=1000, end_time=6000)
         t_min, minima = self.get_Ca_sys_minima(times, series, smooth = smooth, time_threshold = time_threshold, start_time=1000, end_time=6000)
-
+        
         if t_peaks[0] < t_min[0]:
             t_peaks = np.delete(t_peaks, 0)
-
+            
         times_to_peak = []
-
+        
         for i in range(min(len(t_peaks),len(t_min)-1)):
             if ((t_peaks[i] > t_min[i]) and (t_peaks[i] < t_min[i+1])):
                 times_to_peak.append(t_peaks[i] -t_min[i])
             else:
                 import warnings
                 warnings.warn("Implement exception here!")   
-
+                
         return np.array(times_to_peak)
