@@ -42,6 +42,7 @@ class extract:
         self.folderDefinition()
         self.printInfo()
         self.param = self.getParam()
+        self.crunumber =  int(self.param["z_discs"][0]*self.param["crus_per_sec_line"][0]**2 - 4)
 
     def read(self):
         var = pd.read_csv(self.folder + self.values, delim_whitespace = True)
@@ -117,10 +118,9 @@ class extract:
         get total number of RyR and LCCs
         output are lists of the two channel types
         '''
-        crunumber = int(self.param["z_discs"][0]*self.param["crus_per_sec_line"][0]**2 - 4)
         ryr_numbers = []
         lcc_numbers = []
-        for i in range(crunumber):
+        for i in range(self.crunumber):
             crufile = open(self.folder + "clefts/cleft" + str(i) + ".log")
             cruinfo = crufile.readline()
             crufile.close()
@@ -129,6 +129,43 @@ class extract:
             ryr_numbers.append(int(cruinfo[0]))
             lcc_numbers.append(int(cruinfo[2]))
         return ryr_numbers, lcc_numbers
+
+    def saveOpenChannels(self):
+        '''
+        get time steps, number of open RyR and LCC and save them to a file
+        
+        ATTENTION: works only with still not merged branch of cleftdyn (addition_CRU_debug_output)
+        (2018/10/13)
+        where cleft.log output has been changed
+        '''
+        outputname = self.folder + "clefts/openChannels.csv"
+        if (os.path.exists(outputname)):
+            os.remove(outputname)
+        
+        for i in range(self.crunumber):
+            timesteps = []
+            openRyR = []
+            openLCC = []
+            
+            crufile = open(self.folder + "clefts/cleft" + str(i) + ".log")
+            lines = [line.rstrip('\n') for line in crufile]
+            del(lines[0])
+            crufile.close()
+            for line in lines:
+                nums = re.findall("\d+\.\d+", line)
+                timesteps.append(nums[0])
+                nums = re.findall("\d+", line)
+                openRyR.append(nums[-2])
+                openLCC.append(nums[-1])
+
+            # create pandas dataframe to save file to csv
+            outDF = pd.DataFrame({'time': timesteps, 'openRyR': openRyR, 'openLCC': openLCC})
+            outfile = open(outputname, 'a')
+            outfile.write("\ncleft" + str(i) + "\n")
+            outDF.to_csv(outfile, header=True, sep=" ")
+            outfile.close()
+            del(timesteps[:], openRyR[:], openRyR[:])
+
 
     def determineValues(self):
         if ((self.values == "ionic") or (self.values == "ionicmodel") or
@@ -154,11 +191,14 @@ class extract:
         out_file = glob.glob(out_file)[0]
         time = []
         crus = []
+        # sentence to be matched
         match = " number of open crus: "
         with open(out_file, "r") as fp:
             time_lines = [line for line in fp if match in line]
         for line in time_lines:
             nums = re.findall("\d+", line)
+            # the first two ints are the time
             time.append(float(nums[0] + "." + nums[1]))
+            # the third int found is the num of open crus
             crus.append(int(nums[2]))
         return time, crus
