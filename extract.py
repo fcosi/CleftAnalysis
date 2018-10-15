@@ -6,6 +6,7 @@ import pandas as pd
 import os as os
 import re as re
 import glob as glob
+import sys as sys
 
 class extract:
     """
@@ -134,14 +135,15 @@ class extract:
         '''
         get time steps, number of open RyR and LCC and save them to a file
         
-        ATTENTION: works only with still not merged branch of cleftdyn (addition_CRU_debug_output)
+        ATTENTION: works properly only with not merged cleftdyn branch (addition_CRU_debug_output)
         (2018/10/13)
         where cleft.log output has been changed
         '''
         outputname = self.folder + "clefts/openChannels.csv"
         if (os.path.exists(outputname)):
-            os.remove(outputname)
-        
+            sys.exit("cleft ouput for open channels already exists!")
+
+        # get first and last two entries from each line of each cleft.log file
         for i in range(self.crunumber):
             timesteps = []
             openRyR = []
@@ -157,7 +159,7 @@ class extract:
                 nums = re.findall("\d+", line)
                 openRyR.append(nums[-2])
                 openLCC.append(nums[-1])
-
+            
             # create pandas dataframe to save file to csv
             outDF = pd.DataFrame({'time': timesteps, 'openRyR': openRyR, 'openLCC': openLCC})
             outfile = open(outputname, 'a')
