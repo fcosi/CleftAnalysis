@@ -524,7 +524,7 @@ class Analysis:
     
 # ----------------------------------------------------------------------------------------------
 
-    def get_dome_Vm(self, times, series, smooth = 100, start_time = -np.infty, end_time = np.infty):
+    def get_dome_Vm(self, times, series, time_threshold = 100.0, smooth = 50, start_time = -np.infty, end_time = np.infty):
         """
         Computes domes in a membrane potential series and returns the corresponding Vm values and timepoints
         
@@ -551,12 +551,45 @@ class Analysis:
         times_maxima = times[argrelextrema(series, np.greater_equal, order=smooth)]
         Vm_maxima = series[argrelextrema(series, np.greater_equal, order=smooth)]
         
-        Vm_maxima = Vm_maxima[Vm_maxima>0.0]
+        #Vm_maxima = Vm_maxima[Vm_maxima>0.0]
+        
+        if Vm_maxima[0] < Vm_maxima[1]:
+            times_maxima = np.delete(times_maxima, 0)
+            Vm_maxima = np.delete(Vm_maxima, 0)
+        
+        Vm_domes = []
+        t_domes = []
+        
+        factor = 0.7
+        
+        #for i in range(len(Vm_maxima)/2 - 2):
+            #if (factor*Vm_maxima[2*i] > Vm_maxima[2*i+1]) and (Vm_maxima[2*i+1] < factor*Vm_maxima[2*i+2]):
+                #if (Vm_maxima[2*i+1] > 0.0) and (times_maxima[2*i] - times_maxima[2*i+1] < time_threshold):
+                    #Vm_domes.append(Vm_maxima[2*i+1])
+                    #t_domes.append(times_maxima[2*i+1])
+                
+                    
+        for i in range(len(Vm_maxima)):
+            if (factor*Vm_maxima.max() > Vm_maxima[i]) and (Vm_maxima[i] > 0.0):
+                if (len(Vm_domes)==0):
+                    Vm_domes.append(Vm_maxima[i])
+                    t_domes.append(times_maxima[i])
+                if (len(Vm_domes)>0):
+                    if (times_maxima[i] - t_domes[-1] > time_threshold):
+                        Vm_domes.append(Vm_maxima[i])
+                        t_domes.append(times_maxima[i])
+                else:
+                    print("Time interval between domes is too small, increase smoothing factor!")
+            else:
+                import warnings
+                warnings.warn("Implement exception here!")   
+        
 
         #TODO: revise that code and include exceptions
-        Vm_dome = min(Vm_maxima)
+        Vm_domes = np.array(Vm_domes)
+        t_domes = np.array(t_domes)
 
-        return Vm_dome
+        return t_domes, Vm_domes
 
 # ----------------------------------------------------------------------------------------------
 
@@ -615,6 +648,10 @@ class Analysis:
         ----------
         Tuple of arrays of peak times and minima values
         """
+        
+        series = np.array(series)
+        times = np.array(times)
+        
             
         times_, minima_ = self.get_Ca_peaks(times, -series, smooth = smooth, time_threshold = time_threshold, start_time = start_time, end_time = end_time)
         return times_, -minima_
