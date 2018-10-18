@@ -139,11 +139,14 @@ class extract:
         (2018/10/13)
         where cleft.log output has been changed
         '''
+
+        ### ADD THE POSSIBILITY TO IMMEDIATLY READ OUT IF PATH EXISTS (create a new fct for that)
         outputname = self.folder + "clefts/openChannels.csv"
         if (os.path.exists(outputname)):
             sys.exit("cleft ouput for open channels already exists!")
 
         # get first and last two entries from each line of each cleft.log file
+        dict = {}
         for i in range(self.crunumber):
             timesteps = []
             openRyR = []
@@ -162,11 +165,14 @@ class extract:
             
             # create pandas dataframe to save file to csv
             outDF = pd.DataFrame({'time': timesteps, 'openRyR': openRyR, 'openLCC': openLCC})
-            outfile = open(outputname, 'a')
-            outfile.write("\ncleft" + str(i) + "\n")
-            outDF.to_csv(outfile, header=True, sep=" ")
-            outfile.close()
+            dict["cleft" + str(i)] = outDF
             del(timesteps[:], openRyR[:], openRyR[:])
+        outDF = pd.concat(dict)
+        outfile = open(outputname, 'a')
+        #outfile.write("-\n")
+        outDF.to_csv(outfile, header=True, sep=" ")
+        outfile.close()
+        
 
 
     def determineValues(self):
