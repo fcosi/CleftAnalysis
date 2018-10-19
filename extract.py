@@ -131,16 +131,32 @@ class extract:
             lcc_numbers.append(int(cruinfo[2]))
         return ryr_numbers, lcc_numbers
 
+    def getOpenChannels(self):
+        '''
+        get time, open RyR and open LCC from file in clefts/
+        if not existing create it
+        
+        - Return:
+        pandas DataFrame
+        '''
+        
+        outputname = self.folder + "clefts/openChannels.csv"
+        if (not os.path.exists(outputname)):
+            self.saveOpenChannels()
+        
+        df = pd.read_csv(outputname, sep=" ")
+        df = df.rename(index=str, columns={"Unnamed: 0": "clefts", "Unnamed: 1": "counter"})
+        return df
+
     def saveOpenChannels(self):
         '''
-        get time steps, number of open RyR and LCC and save them to a file
+        save time steps, number of open RyR and LCC to file in clefts/ dir
         
         ATTENTION: works properly only with not merged cleftdyn branch (addition_CRU_debug_output)
         (2018/10/13)
         where cleft.log output has been changed
         '''
 
-        ### ADD THE POSSIBILITY TO IMMEDIATLY READ OUT IF PATH EXISTS (create a new fct for that)
         outputname = self.folder + "clefts/openChannels.csv"
         if (os.path.exists(outputname)):
             sys.exit("cleft ouput for open channels already exists!")
@@ -172,7 +188,6 @@ class extract:
         #outfile.write("-\n")
         outDF.to_csv(outfile, header=True, sep=" ")
         outfile.close()
-        
 
 
     def determineValues(self):
