@@ -145,7 +145,7 @@ class extract:
             self.saveOpenChannels()
         
         df = pd.read_csv(outputname, sep=" ")
-        df = df.rename(index=str, columns={"Unnamed: 0": "clefts", "Unnamed: 1": "counter"})
+        df = df.rename(index=str, columns={"Unnamed: 0": "counter0", "Unnamed: 1": "counter1"})
         return df
 
     def saveOpenChannels(self):
@@ -161,32 +161,36 @@ class extract:
         if (os.path.exists(outputname)):
             sys.exit("cleft ouput for open channels already exists!")
 
-        # get first and last two entries from each line of each cleft.log file
-        dict = {}
+        totDF = pd.DataFrame()
         for i in range(self.crunumber):
             timesteps = []
             openRyR = []
             openLCC = []
-            
+            cleftname = "cleft" + str(i)
             crufile = open(self.folder + "clefts/cleft" + str(i) + ".log")
             lines = [line.rstrip('\n') for line in crufile]
-            del(lines[0])
             crufile.close()
+            totalRyR = int(lines[0].split(" ")[0])
+            totalLCC = int(lines[0].split(" ")[2])
+            del(lines[0])            
             for line in lines:
                 nums = re.findall("\d+\.\d+", line)
                 timesteps.append(nums[0])
                 nums = re.findall("\d+", line)
-                openRyR.append(nums[-2])
-                openLCC.append(nums[-1])
+                openRyR.append(int(nums[-2]))
+                openLCC.append(int(nums[-1]))
             
             # create pandas dataframe to save file to csv
-            outDF = pd.DataFrame({'time': timesteps, 'openRyR': openRyR, 'openLCC': openLCC})
-            dict["cleft" + str(i)] = outDF
+            outDF = pd.DataFrame({'clefts': cleftname,'time': timesteps, 'openRyR': openRyR,
+                                  'openLCC': openLCC, 'totalRyR': totalRyR, 'totalLCC': totalLCC})
+            #dict[cleftname] = outDF
             del(timesteps[:], openRyR[:], openRyR[:])
-        outDF = pd.concat(dict)
+            totDF = pd.concat([totDF, outDF])
+        totDF["ratioRyR"] = totDF["openRyR"]/totDF["totalRyR"]
+        totDF["ratioLCC"] = totDF["openLCC"]/totDF["totalLCC"]
         outfile = open(outputname, 'a')
         #outfile.write("-\n")
-        outDF.to_csv(outfile, header=True, sep=" ")
+        totDF.to_csv(outfile, header=True, sep=" ")
         outfile.close()
 
 
