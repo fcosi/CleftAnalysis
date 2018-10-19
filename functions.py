@@ -693,3 +693,25 @@ class Analysis:
                 warnings.warn("Implement exception here!")   
                 
         return np.array(times_to_peak)
+
+# ----------------------------------------------------------------------------------------------
+
+    def reduceClefts_byRatioThreshold(self, df, threshold = 0.5, reduct = "ratioRyR"):
+        '''
+        Returns DF with clefts having open ratio > threshold
+        
+        Parameters
+        ----------
+        - pandas DataFrame with ratio of RyR, LCC and cleft names
+        - threshold (optional, minimum ratio to consider cleft)
+        - reduct (ratio has to be considered) std: ratioRyR
+        
+        Returns
+        ----------
+        pandas DataFrame with relevant clefts
+        '''
+        rel_clefts = df[df[reduct] > threshold]["clefts"].drop_duplicates()
+        res = pd.DataFrame()
+        for cleft in rel_clefts:
+            res = pd.concat([res, df[df["clefts"] == cleft]])
+        return res
