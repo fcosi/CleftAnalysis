@@ -23,85 +23,86 @@ class SparkAnalysis:
     """
     
     def __init__(self, folder):
-        self.folder = folder
-        self.processes = self.get_used_processes()
-        self.cru_info = self.get_cru_info()
+        pass
+        #self.folder = folder
+        #self.processes = self.get_used_processes()
+        #self.cru_info = self.get_cru_info()
 
-# ----------------------------------------------------------------------------------------------
+## ----------------------------------------------------------------------------------------------
 
-    def get_cru_info(self):
-        '''
-        Function collecting information on the CRUs saved in the linescan
-        '''
-        frames_cru_info = []
-        for i in range(0, self.processes):        
-            filename = self.folder + 'linescan/cru_info_rank' + str(i) + ".csv"
-            try:
-                temp_cru_info = pd.read_csv(filename)
-            except FileNotFoundError:
-                print("file not found, probably no linescan activated!")
-                break
-            #    sort values
-            temp_cru_info = temp_cru_info.sort_values(by=["time", "cru_id"])
-            # round values to needed precission
-            #temp_cru_info = temp_cru_info.round({'time': 1, 'cru_flux': 2, 'cyto_ca2+': 4, 'cyto_bm': 2, 'cyto_bs':2, 'sarco_ca': 0 , 'fluo4': 2})        
-            # delete round postion values and delete duplicates to reduce memory cost       
-            temp_cru_info = temp_cru_info.drop_duplicates()
-            #    append to data frame
-            frames_cru_info.append(temp_cru_info)
-        try:
-            #print(frames_cru_info)
-            frames_info = pd.concat(frames_cru_info)
-            #print(frames_cru_info)
-            frames_info = frames_info.sort_values(by=["time", "cru_id"])
-        except ValueError or AttributeError:
-            frames_info = []
-            pass
-        return frames_info
+    #def get_cru_info(self):
+        #'''
+        #Function collecting information on the CRUs saved in the linescan
+        #'''
+        #frames_cru_info = []
+        #for i in range(0, self.processes):        
+            #filename = self.folder + 'linescan/cru_info_rank' + str(i) + ".csv"
+            #try:
+                #temp_cru_info = pd.read_csv(filename)
+            #except FileNotFoundError:
+                #print("file not found, probably no linescan activated!")
+                #break
+            ##    sort values
+            #temp_cru_info = temp_cru_info.sort_values(by=["time", "cru_id"])
+            ## round values to needed precission
+            ##temp_cru_info = temp_cru_info.round({'time': 1, 'cru_flux': 2, 'cyto_ca2+': 4, 'cyto_bm': 2, 'cyto_bs':2, 'sarco_ca': 0 , 'fluo4': 2})        
+            ## delete round postion values and delete duplicates to reduce memory cost       
+            #temp_cru_info = temp_cru_info.drop_duplicates()
+            ##    append to data frame
+            #frames_cru_info.append(temp_cru_info)
+        #try:
+            ##print(frames_cru_info)
+            #frames_info = pd.concat(frames_cru_info)
+            ##print(frames_cru_info)
+            #frames_info = frames_info.sort_values(by=["time", "cru_id"])
+        #except ValueError or AttributeError:
+            #frames_info = []
+            #pass
+        #return frames_info
 
-# ----------------------------------------------------------------------------------------------
+## ----------------------------------------------------------------------------------------------
 
-    def get_linescan_info(self, spark_no = 1, duration = 1):
-        '''
-        return time, cru_id, scan_direction and scan_direction_pos of a linescan
+    #def get_linescan_info(self, spark_no = 1, duration = 1):
+        #'''
+        #return time, cru_id, scan_direction and scan_direction_pos of a linescan
         
-        Args
-        ----------
-        spark_no: spark id
-        duration: time interval in ms from which to take the spark data
-        '''
-        # check spark number is lower than len(spark_candidates_startTimes)
-        frames_linescan = []
-        spark_candidates_startTimes, spark_candidates_endTimes = self.getSparkStartEndTimes(duration)
-        for i in range(0, self.processes):        
-            filename = self.folder + "linescan/" + 'linescan_rank' + str(i) + ".csv"
-            # get linescans and adjust them to spark
-            temp_linescan = pd.read_csv(filename)
-            temp_linescan = temp_linescan[temp_linescan['time'] >= spark_candidates_startTimes[spark_no-1]]
-            temp_linescan = temp_linescan[temp_linescan['time'] < spark_candidates_endTimes[spark_no-1]]
-            # z-disc selection         
-            #temp_cru_info = temp_cru_info[temp_cru_info['cru_z'] >= 3.0]
-            #temp_cru_info = temp_cru_info[temp_cru_info['cru_z'] <= 5.0]    
+        #Args
+        #----------
+        #spark_no: spark id
+        #duration: time interval in ms from which to take the spark data
+        #'''
+        ## check spark number is lower than len(spark_candidates_startTimes)
+        #frames_linescan = []
+        #spark_candidates_startTimes, spark_candidates_endTimes = self.getSparkStartEndTimes(duration)
+        #for i in range(0, self.processes):        
+            #filename = self.folder + "linescan/" + 'linescan_rank' + str(i) + ".csv"
+            ## get linescans and adjust them to spark
+            #temp_linescan = pd.read_csv(filename)
+            #temp_linescan = temp_linescan[temp_linescan['time'] >= spark_candidates_startTimes[spark_no-1]]
+            #temp_linescan = temp_linescan[temp_linescan['time'] < spark_candidates_endTimes[spark_no-1]]
+            ## z-disc selection         
+            ##temp_cru_info = temp_cru_info[temp_cru_info['cru_z'] >= 3.0]
+            ##temp_cru_info = temp_cru_info[temp_cru_info['cru_z'] <= 5.0]    
             
-            temp_linescan = temp_linescan.sort_values(by=["time", "cru_id" , "scan_direction", "scan_direction_pos"])
-            # round values to needed precission
-            # temp_linescan = temp_linescan.round({'time': 1, 'scan_direction_pos':1, 'cyto_ca2+': 2, 'cyto_bm': 2, 'cyto_bs':2, 'sarco_ca': 0 , 'fluo4': 2})
-            temp_linescan = temp_linescan.drop_duplicates()
-            # append to tmp list
-            frames_linescan.append(temp_linescan)            
-        linescan_all = pd.concat(frames_linescan)        
-        linescan_all = linescan_all.sort_values(by=["time", "cru_id" , "scan_direction", "scan_direction_pos"])
-        return linescan_all
-# ----------------------------------------------------------------------------------------------
+            #temp_linescan = temp_linescan.sort_values(by=["time", "cru_id" , "scan_direction", "scan_direction_pos"])
+            ## round values to needed precission
+            ## temp_linescan = temp_linescan.round({'time': 1, 'scan_direction_pos':1, 'cyto_ca2+': 2, 'cyto_bm': 2, 'cyto_bs':2, 'sarco_ca': 0 , 'fluo4': 2})
+            #temp_linescan = temp_linescan.drop_duplicates()
+            ## append to tmp list
+            #frames_linescan.append(temp_linescan)            
+        #linescan_all = pd.concat(frames_linescan)        
+        #linescan_all = linescan_all.sort_values(by=["time", "cru_id" , "scan_direction", "scan_direction_pos"])
+        #return linescan_all
+## ----------------------------------------------------------------------------------------------
 
-    def get_used_processes(self):
-        '''
-        Function that reads the output file and returns the number of used processes
-        '''
-        with open(glob.glob(self.folder + "20*")[0]) as f:
-            first = f.readline()
-            f.close()
-        return (int(re.search(r'\d+', first).group()))
+    #def get_used_processes(self):
+        #'''
+        #Function that reads the output file and returns the number of used processes
+        #'''
+        #with open(glob.glob(self.folder + "20*")[0]) as f:
+            #first = f.readline()
+            #f.close()
+        #return (int(re.search(r'\d+', first).group()))
 
 # ----------------------------------------------------------------------------------------------
 
@@ -249,7 +250,103 @@ class SparkAnalysis:
             
             print("FD: %f ms" % FD)
             print("FDHM: %f ms" % FDHM)
-            print("#"*23)     
+            print("#"*23)    
+            
+    def get_cru_positions(self,cru_info):
+        
+        crus_x = []
+        crus_y = []
+        crus_z = []
+        crus_start_time = []
+
+        for cru_id in cru_info['cru_id'].unique():
+            cru_df = cru_info[cru_info['cru_id'] == cru_id]
+            temp = cru_df.iloc[0]
+            print temp['cru_x']
+            print temp['cru_y']
+    
+            crus_x.append(temp['cru_x'])
+            crus_y.append(temp['cru_y'])
+            crus_z.append(temp['cru_z'])
+            crus_start_time.append(temp['time'])
+            
+        pos = np.array(zip(crus_x,crus_y,crus_z,crus_start_time))
+        
+        return pos
+    
+    def get_cru_cluster(self, positions, scale_time=0.1, threshold=3.0):
+        
+        
+        from sklearn.cluster import MeanShift, estimate_bandwidth
+        
+        pos_scaled = np.copy(positions)
+        #pos_scaled[3:] = pos_scaled[3:]*scale_time
+        
+        labels = np.array([0])
+
+        if len(pos_scaled) > 2:
+            #X = np.array(zip(crus_x,crus_y,crus_z,crus_time))
+            # #############################################################################
+            # Compute clustering with MeanShift
+
+            #bandwidth = estimate_bandwidth(pos_scaled, quantile=0.2, n_samples=len(pos_scaled))
+    
+            bandwidth = threshold
+                        
+            ms = MeanShift(bandwidth=bandwidth, bin_seeding=True)
+            ms.fit(pos_scaled)
+            labels = ms.labels_
+            cluster_centers = ms.cluster_centers_
+
+        elif len(pos_scaled)==2:
+            temp = X[0]
+            temp -= X[1]
+            dist1 = np.linalg.norm(temp,2)
+            if dist1 > threshold:
+                labels = np.array([0,1])
+            else:
+                labels = np.array([0,0])
+                
+        crus_per_cluster = np.array([np.count_nonzero(labels == i) for i in range(labels.max()+1)])
+        #crus_per_cluster = np.zeros(labels.max())
+        
+        return labels, crus_per_cluster 
+    
+    def get_spark_max(self, labels, cru_info, quantity = "cyto_ca2+"):
+    
+        values = np.zeros(len(set(labels)))
+        
+        counter = 0
+
+        for cru_id in cru_info['cru_id'].unique():
+            
+            cru_df = cru_info[cru_info['cru_id'] == cru_id]
+            label = labels[counter]
+            if values[label] < cru_df[quantity].max():
+                values[label] = cru_df[quantity].max()
+            counter += 1
+            
+        return values
+    
+    def get_FDX(self, labels, cru_info, quantity_max, quantity = "cyto_ca2+", percent = 50):
+    
+        spark_times = np.zeros(len(set(labels)))
+        
+        counter = 0
+        
+        for cru_id in cru_info['cru_id'].unique():
+            
+            label = labels[counter]
+    
+            cru_df = cru_info[cru_info['cru_id'] == cru_id]
+     
+            cru_dfX = cru_df[cru_df["cyto_ca2+"] > 0.1*quantity_max[label]]
+            timeX = cru_dfX['time'].max() - cru_dfX['time'].min()
+    
+            if spark_times[label] < timeX:
+                spark_times[label] = timeX
+                
+        return spark_times
 
 # ----------------------------------------------------------------------------------------------
 

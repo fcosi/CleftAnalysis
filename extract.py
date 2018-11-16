@@ -7,6 +7,7 @@ import os as os
 import re as re
 import glob as glob
 import sys as sys
+import numpy as np
 
 class extract:
     """
@@ -229,3 +230,69 @@ class extract:
             # the third int found is the num of open crus
             crus.append(int(nums[2]))
         return time, crus
+    
+    def get_linescan_cru_info(self, start_time = -np.infty, end_time = np.infty, min_z = -np.infty, max_z = np.infty):
+        '''
+            extracts cru_info_rank*.csv files from linescan folder
+        '''
+        # find files in subfolder
+        
+        linescan_folder = self.folder + "linescan/"
+        path, dirs, files = next(os.walk(linescan_folder))
+        
+        frames_cru_info = []
+        
+        for filename in files:
+            
+            if filename.find("cru_info") == -1:
+                continue
+            
+            temp_cru_info = pd.read_csv(linescan_folder + filename)
+    
+            #print temp_cru_info
+            #
+            '''
+            z-disc selection
+            '''
+            
+            temp_cru_info = temp_cru_info[temp_cru_info['cru_z'] >= min_z]
+            temp_cru_info = temp_cru_info[temp_cru_info['cru_z'] <= max_z]
+            
+            '''
+            time selection
+            '''
+            
+            temp_cru_info = temp_cru_info[temp_cru_info['time'] >= start_time]
+            
+        
+            '''
+            sort values
+            '''
+
+            temp_cru_info = temp_cru_info.sort_values(by=["time", "cru_id"])
+            
+       
+            '''
+            round values to needed precission
+            '''
+            
+            temp_cru_info = temp_cru_info.round({'time': 1, 'cru_flux': 2, 'cyto_ca2+': 2, 'cyto_bm': 2, 'cyto_bs':2, 'sarco_ca': 0 , 'fluo4': 2})
+            
+            '''
+            delete round postion values and delete duplicates to reduce memory cost
+            '''
+            temp_cru_info = temp_cru_info.drop_duplicates()
+
+            # uncomment the following to see memory usage
+
+            '''
+            append to data frame
+            '''
+            
+            frames_cru_info.append(temp_cru_info)
+
+        cru_info_all = pd.concat(frames_cru_info)
+
+        cru_info_all = cru_info_all.sort_values(by=["time", "cru_id"])
+        
+        return cru_info_all
