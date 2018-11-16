@@ -262,8 +262,6 @@ class SparkAnalysis:
         for cru_id in cru_info['cru_id'].unique():
             cru_df = cru_info[cru_info['cru_id'] == cru_id]
             temp = cru_df.iloc[0]
-            print temp['cru_x']
-            print temp['cru_y']
     
             crus_x.append(temp['cru_x'])
             crus_y.append(temp['cru_y'])
@@ -289,9 +287,10 @@ class SparkAnalysis:
             # #############################################################################
             # Compute clustering with MeanShift
 
-            #bandwidth = estimate_bandwidth(pos_scaled, quantile=0.2, n_samples=len(pos_scaled))
+            bandwidth = estimate_bandwidth(pos_scaled, quantile=0.2, n_samples=len(pos_scaled))
     
-            bandwidth = threshold
+            if (bandwidth <0.5):
+                bandwidth = threshold
                         
             ms = MeanShift(bandwidth=bandwidth, bin_seeding=True)
             ms.fit(pos_scaled)
@@ -299,8 +298,8 @@ class SparkAnalysis:
             cluster_centers = ms.cluster_centers_
 
         elif len(pos_scaled)==2:
-            temp = X[0]
-            temp -= X[1]
+            temp = pos_scaled[0]
+            temp -= pos_scaled[1]
             dist1 = np.linalg.norm(temp,2)
             if dist1 > threshold:
                 labels = np.array([0,1])
@@ -328,7 +327,7 @@ class SparkAnalysis:
             
         return values
     
-    def get_FDX(self, labels, cru_info, quantity_max, quantity = "cyto_ca2+", percent = 50):
+    def get_FDX(self, labels, cru_info, quantity_max, quantity = "cyto_ca2+", percent = 50.0):
     
         spark_times = np.zeros(len(set(labels)))
         
@@ -340,7 +339,7 @@ class SparkAnalysis:
     
             cru_df = cru_info[cru_info['cru_id'] == cru_id]
      
-            cru_dfX = cru_df[cru_df["cyto_ca2+"] > 0.1*quantity_max[label]]
+            cru_dfX = cru_df[cru_df["cyto_ca2+"] > (float(percent)/100.0)*quantity_max[label]]
             timeX = cru_dfX['time'].max() - cru_dfX['time'].min()
     
             if spark_times[label] < timeX:
