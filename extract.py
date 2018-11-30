@@ -128,8 +128,8 @@ class extract:
             crufile.close()
             cruinfo = cruinfo.split(" ")
             # append number of RyR and LCCs to list
-            ryr_numbers.append(int(cruinfo[0]))
-            lcc_numbers.append(int(cruinfo[2]))
+            ryr_numbers.append(int(cruinfo[cruinfo.index("RyRs") - 1]))
+            lcc_numbers.append(int(cruinfo[cruinfo.index("LCCs") - 1]))
         return ryr_numbers, lcc_numbers
 
     def getOpenChannels(self):
