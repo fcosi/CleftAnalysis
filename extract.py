@@ -115,13 +115,16 @@ class extract:
     def getParameters(self):
         return self.param
 
-    def crusInfo(self):
+    def crusInfo(self, getRadius = False, getLocations = False):
         '''
-        get total number of RyR and LCCs
+        get total number of RyR and LCCs. Optional radius and channel locations
+        
         output are lists of the two channel types
+        optional if variables set to True also output CRU radius and channel locations
         '''
         ryr_numbers = []
         lcc_numbers = []
+        radii = []
         for i in range(self.crunumber):
             crufile = open(self.folder + "clefts/cleft" + str(i) + ".log")
             cruinfo = crufile.readline()
@@ -130,7 +133,12 @@ class extract:
             # append number of RyR and LCCs to list
             ryr_numbers.append(int(cruinfo[cruinfo.index("RyRs") - 1]))
             lcc_numbers.append(int(cruinfo[cruinfo.index("LCCs") - 1]))
-        return ryr_numbers, lcc_numbers
+            radii.append(float(cruinfo[cruinfo.index("Radius") - 1]))
+        
+        if getRadius:
+            return ryr_numbers, lcc_numbers, radii
+        else:
+            return ryr_numbers, lcc_numbers
 
     def getOpenChannels(self):
         '''
