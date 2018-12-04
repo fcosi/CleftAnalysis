@@ -116,29 +116,80 @@ class extract:
         return self.param
 
     def crusInfo(self, getRadius = False, getLocations = False):
-        '''
-        get total number of RyR and LCCs. Optional radius and channel locations
+        '''get total number of RyR and LCCs. Optional radius and channel locations
         
-        output are lists of the two channel types
-        optional if variables set to True also output CRU radius and channel locations
+        output are lists of the two channel types optional if
+        variables set to True also output CRU radius and channel
+        locations (in lists)
+        
         '''
         ryr_numbers = []
         lcc_numbers = []
         radii = []
+        ryr_location = []
+        lcc_location = []
         for i in range(self.crunumber):
             crufile = open(self.folder + "clefts/cleft" + str(i) + ".log")
             cruinfo = crufile.readline()
             crufile.close()
-            cruinfo = cruinfo.split(" ")
-            # append number of RyR and LCCs to list
+            cruinfo = cruinfo.strip().replace("  ", " ").split(" ")
+            # append number of RyR, LCCs and Radius to list
             ryr_numbers.append(int(cruinfo[cruinfo.index("RyRs") - 1]))
             lcc_numbers.append(int(cruinfo[cruinfo.index("LCCs") - 1]))
             radii.append(float(cruinfo[cruinfo.index("Radius") - 1]))
+            # get the locations of the channels only if wished
+            if getLocations:
+                tmp1, tmp2 = self.__getLocations(ryr_numbers[i], lcc_numbers[i], cruinfo)
+                ryr_location.append(tmp1)
+                lcc_location.append(tmp2)
         
-        if getRadius:
+        # return different lists according to the wished arguments
+        if getRadius and not getLocations:
             return ryr_numbers, lcc_numbers, radii
+        elif getLocations and not getRadius:
+            return ryr_numbers, lcc_numbers, ryr_location, lcc_location
+        elif getRadius and getLocations:
+            return ryr_numbers, lcc_numbers, radii, ryr_location, lcc_location
         else:
             return ryr_numbers, lcc_numbers
+
+    def __getLocations(self, nryr, nlcc, cru_info_list):
+        '''
+        To be used only for crusInfo()
+        
+        gets x y pairs from first line of the cleft logs
+        
+        returns np 2d array
+        '''
+        loc_index = cru_info_list.index("Location")
+        cru_info_list = cru_info_list[loc_index + 1:]
+        ryr_loc = np.zeros([2, nryr]) 
+        lcc_loc = np.zeros([2, nlcc])
+        
+        if ('(' in cru_info_list[0] or '(' in cru_info_list[1]):    
+            for ind, pair in enumerate(cru_info_list[:nryr]):
+                loc = pair[1:-1].split(";")
+                ryr_loc[0,ind] = float(loc[0])
+                ryr_loc[1,ind] = float(loc[1])
+            for ind, pair in enumerate(cru_info_list[nryr: nryr + nlcc]):
+                loc = pair[1:-1].split(";")
+                lcc_loc[0,ind] = float(loc[0])
+                lcc_loc[1,ind] = float(loc[1])
+        else:
+            import warnings
+            warnings.warn("Extracting the Locations 'old' saving style,\
+            be aware they probably \
+            will cause numerical issues, since the output is not consistent.")
+            
+            for ind, num in enumerate(cru_info_list[:nryr-1:2]):
+                ryr_loc[0,ind] = float(cru_info_list[ind])
+                ryr_loc[1,ind] = float(cru_info_list[ind + 1])
+            
+            for ind, num in enumerate(cru_info_list[nryr + 1: nryr + nlcc:2]):
+                lcc_loc[0,ind] = float(cru_info_list[ind])
+                lcc_loc[1,ind] = float(cru_info_list[ind + 1])
+        return ryr_loc, lcc_loc
+
 
     def getOpenChannels(self):
         '''
