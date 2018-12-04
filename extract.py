@@ -177,9 +177,7 @@ class extract:
                 lcc_loc[1,ind] = float(loc[1])
         else:
             import warnings
-            warnings.warn("Extracting the Locations 'old' saving style,\
-            be aware they probably \
-            will cause numerical issues, since the output is not consistent.")
+            warnings.warn("""\nExtracting the Locations 'old' saving style, be AWARE they probably will cause numerical issues, since the output is not consistent.""")
             
             for ind, num in enumerate(cru_info_list[:nryr-1:2]):
                 ryr_loc[0,ind] = float(cru_info_list[ind])
