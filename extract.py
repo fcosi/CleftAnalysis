@@ -188,6 +188,32 @@ class extract:
                 lcc_loc[1,ind] = float(cru_info_list[ind + 1])
         return ryr_loc, lcc_loc
 
+    def saveCleftPlot(self, mergeOutput = False):
+        """
+        Save a plot of each cleft using the channel Locations
+        """
+        import matplotlib.pyplot as plt
+        nR, nL, radii, rloc, lloc = self.crusInfo(getRadius=True, getLocations=True)
+        savepath = self.folder + "clefts/cleftplot{}.pdf"
+        for i in range(self.crunumber):
+            rad = radii[i]
+            fig, ax = plt.subplots()
+            ax.plot(rloc[i][0,], rloc[i][1,], "go", label="{} RyR".format(nR[i]))
+            ax.plot(lloc[i][0,], lloc[i][1,], "bo", label="{} LCC".format(nL[i]))
+            circ = plt.Circle((0,0), rad, color='k', fill=False)
+            ax.add_artist(circ)
+            ax.set_xlabel("x [$\mu m$]")
+            ax.set_ylabel("y [$\mu m$]")
+            ax.set_xlim((-1.5*rad, 1.5*rad))
+            ax.set_ylim((-1.5*rad, 1.5*rad))
+            ax.legend()
+            fig.savefig(savepath.format(i), bbox_inches = "tight")
+        if mergeOutput:
+            import os
+            savepath = savepath.format("*")
+            print(savepath)
+            os.system('pdfunite "{}" "{}"clefts/cleftall.pdf'.format(savepath, self.folder))
+
 
     def getOpenChannels(self):
         '''
