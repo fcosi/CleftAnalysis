@@ -256,8 +256,9 @@ class extract:
             crufile.close()
             totalRyR = int(lines[0].split(" ")[0])
             totalLCC = int(lines[0].split(" ")[2])
-            del(lines[0])            
-            for line in lines:
+            del(lines[0])
+            # dirty hack: list starts from 1 since the first time step with time=0 (no dot for float) is not covered by regular expression (CHANGE THIS!)
+            for line in lines[1:]:
                 nums = re.findall("\d+\.\d+", line)
                 timesteps.append(nums[0])
                 nums = re.findall("\d+", line)
