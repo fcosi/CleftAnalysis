@@ -251,12 +251,8 @@ class extract:
             openRyR = []
             openLCC = []
             cleftname = "cleft" + str(i)
-            crufile = open(self.folder + "clefts/cleft" + str(i) + ".log")
-            lines = [line.rstrip('\n') for line in crufile]
-            crufile.close()
-            totalRyR = int(lines[0].split(" ")[0])
-            totalLCC = int(lines[0].split(" ")[2])
-            del(lines[0])
+            # get all lines from cleftlogs
+            lines, totalRyR, totalLCC = self.__getCleftLogLines(i)
             # dirty hack: list starts from 1 since the first time step with time=0 (no dot for float) is not covered by regular expression (CHANGE THIS!)
             for line in lines[1:]:
                 nums = re.findall("\d+\.\d+", line)
@@ -274,11 +270,36 @@ class extract:
         totDF["ratioRyR"] = totDF["openRyR"]/totDF["totalRyR"]
         totDF["ratioLCC"] = totDF["openLCC"]/totDF["totalLCC"]
         outfile = open(outputname, 'a')
-        #outfile.write("-\n")
         totDF.to_csv(outfile, header=True, sep=" ")
         outfile.close()
 
 
+    def getChannelConcentration(self, cleftnr=0):
+        """
+        get Ca concentrations at channel mouth from cleft logs given the cleftnumber
+        
+        Return:
+        nparray with channel concentrations and timesteps
+        """
+        lines, totR, totL = self.__getCleftLogLines(cleftnr)
+        times = np.zeros(len(lines))
+        #return lines, totR, totL
+        #return times, ryr_concentration, lcc_concentration
+
+    def __getCleftLogLines(self, crunum):
+        """
+        private fct returning the lines of the cleftlogs and the total number of RyR LCCs
+        without the first line
+        used by getChannelConcentration() and saveOpenChannels() fcts.
+        """
+        crufile = open(self.folder + "clefts/cleft" + str(crunum) + ".log")
+        lines = [line.rstrip('\n') for line in crufile]
+        crufile.close()
+        totalRyR = int(lines[0].split(" ")[0])
+        totalLCC = int(lines[0].split(" ")[2])        
+        del(lines[0])
+        return lines, totalRyR, totalLCC
+    
     def determineValues(self):
         if ((self.values == "ionic") or (self.values == "ionicmodel") or
             (self.values == "ionicmodel.txt") or (self.values == 1) or (self.values == "ion")):
