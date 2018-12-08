@@ -238,7 +238,7 @@ class extract:
         
         ATTENTION: works properly only with not merged cleftdyn branch (addition_CRU_debug_output)
         (2018/10/13)
-        where cleft.log output has been changed
+        where cleft.log output has been changed (num of open channels outputted)
         '''
 
         outputname = self.folder + "clefts/openChannels.csv"
@@ -274,17 +274,30 @@ class extract:
         outfile.close()
 
 
-    def getChannelConcentration(self, cleftnr=0):
+    def getChannelConcentrations(self, cleftnr=0):
         """
         get Ca concentrations at channel mouth from cleft logs given the cleftnumber
         
+        Args:
+        - cleftnumber
+        
         Return:
-        nparray with channel concentrations and timesteps
+        - numpy arrays with channel concentrations and timesteps
         """
         lines, totR, totL = self.__getCleftLogLines(cleftnr)
-        times = np.zeros(len(lines))
-        #return lines, totR, totL
-        #return times, ryr_concentration, lcc_concentration
+        times = np.zeros([1, len(lines)])
+        ryr_conc = np.zeros([len(lines), totR])
+        lcc_conc = np.zeros([len(lines), totL])
+        first_channel_ind = 5
+        for ind, line in enumerate(lines):
+            line_list = line.replace("  ", " ").split(" ")
+            times[:,ind] = line_list[0]
+            line_list = line_list[first_channel_ind:]
+            ryr_conc[ind,:] = line_list[1:3*totR:3]
+            line_list = line_list[3*totR:]
+            lcc_conc[ind,:] = line_list[1:3*totL:3]
+        
+        return times, ryr_conc, lcc_conc
 
     def __getCleftLogLines(self, crunum):
         """
