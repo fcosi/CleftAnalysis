@@ -192,6 +192,11 @@ class extract:
         """
         Save a plot of each cleft using the channel Locations
         """
+        import os
+        outputname = self.folder + "clefts/cleftall.pdf"
+        if (os.path.exists(outputname)):
+            sys.exit("cleft ouput plots already exist!")
+        
         import matplotlib.pyplot as plt
         nR, nL, radii, rloc, lloc = self.crusInfo(getRadius=True, getLocations=True)
         savepath = self.folder + "clefts/cleftplot{}.pdf"
@@ -208,8 +213,7 @@ class extract:
             ax.set_ylim((-1.5*rad, 1.5*rad))
             ax.legend()
             fig.savefig(savepath.format(i), bbox_inches = "tight")
-        if mergeOutput:
-            import os
+        if mergeOutput:            
             savepath = savepath.format("*")
             print(savepath)
             os.system('pdfunite {} {}clefts/cleftall.pdf'.format(savepath, self.folder))
