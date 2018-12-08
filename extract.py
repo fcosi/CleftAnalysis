@@ -212,7 +212,7 @@ class extract:
             import os
             savepath = savepath.format("*")
             print(savepath)
-            os.system('pdfunite "{}" "{}"clefts/cleftall.pdf'.format(savepath, self.folder))
+            os.system('pdfunite {} {}clefts/cleftall.pdf'.format(savepath, self.folder))
 
 
     def getOpenChannels(self):
