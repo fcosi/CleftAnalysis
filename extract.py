@@ -115,6 +115,25 @@ class extract:
     def getParameters(self):
         return self.param
 
+    def getSimulationFolders(self, rootdir = "sampling"):
+        """
+        get list of simulation numbers given a root directory where the sims can be found
+        needed for analysis of sampling data
+        
+        (this fct is independent of the folder with which the class was initialized)
+        """
+        sim_dirs = []
+        rootdir = "../" + rootdir
+        for subdir, dirs, files in os.walk(rootdir):
+            if len(dirs) > 0 and not "continue" in subdir:
+                for directory in dirs:
+                    try:
+                        val = int(directory)
+                        sim_dirs.append(directory)
+                    except ValueError:
+                        pass
+        return sim_dirs
+
     def crusInfo(self, getRadius = False, getLocations = False):
         '''get total number of RyR and LCCs. Optional radius and channel locations
         
@@ -217,7 +236,6 @@ class extract:
             savepath = savepath.format("*")
             print(savepath)
             os.system('pdfunite {} {}clefts/cleftall.pdf'.format(savepath, self.folder))
-
 
     def getOpenChannels(self):
         '''
