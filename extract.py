@@ -213,8 +213,10 @@ class extract:
         """
         import os
         outputname = self.folder + "clefts/cleftall.pdf"
-        if (os.path.exists(outputname)):
-            sys.exit("cleft ouput plots already exist!")
+        if (os.path.isfile(outputname)):
+            import warnings
+            warnings.warn("cleft ouput plots already exist!")
+            return None
         
         import matplotlib.pyplot as plt
         nR, nL, radii, rloc, lloc = self.crusInfo(getRadius=True, getLocations=True)
@@ -264,8 +266,10 @@ class extract:
         '''
 
         outputname = self.folder + "clefts/openChannels.csv"
-        if (os.path.exists(outputname)):
-            sys.exit("cleft ouput for open channels already exists!")
+        if (os.path.isfile(outputname)):
+            import warnings
+            warnings.warn("cleft ouput for open channels already exists!")
+            return None
 
         totDF = pd.DataFrame()
         for i in range(self.crunumber):
