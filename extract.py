@@ -207,13 +207,13 @@ class extract:
                 lcc_loc[1,ind] = float(cru_info_list[ind + 1])
         return ryr_loc, lcc_loc
 
-    def saveCleftPlot(self, mergeOutput = False):
+    def saveCleftPlot(self, mergeOutput = False, overwrite = False):
         """
         Save a plot of each cleft using the channel Locations
         """
         import os
         outputname = self.folder + "clefts/cleftall.pdf"
-        if (os.path.isfile(outputname)):
+        if os.path.isfile(outputname) and not overwrite:
             import warnings
             warnings.warn("cleft ouput plots already exist!")
             return None
@@ -256,7 +256,7 @@ class extract:
         df = df.rename(index=str, columns={"Unnamed: 0": "counter0", "Unnamed: 1": "counter1"})
         return df
 
-    def saveOpenChannels(self):
+    def saveOpenChannels(self, overwrite = False):
         '''
         save time steps, number of open RyR and LCC to file in clefts/ dir
         
@@ -266,7 +266,7 @@ class extract:
         '''
 
         outputname = self.folder + "clefts/openChannels.csv"
-        if (os.path.isfile(outputname)):
+        if os.path.isfile(outputname) and not overwrite:
             import warnings
             warnings.warn("cleft ouput for open channels already exists!")
             return None
