@@ -324,6 +324,33 @@ class extract:
             lcc_conc[ind,:] = line_list[1:3*totL:3]
         
         return times, ryr_conc, lcc_conc
+    
+    def getChannelFluxes(self, cleftnr=0):
+        
+        """
+        get Ca fluxes at channel mouth from cleft logs given the cleftnumber
+        
+        Args:
+        - cleftnumber
+        
+        Return:
+        - numpy arrays with channel fluxes and timesteps
+        """
+        
+        lines, totR, totL = self.__getCleftLogLines(cleftnr)
+        times = np.zeros([1, len(lines)])
+        ryr_flux = np.zeros([len(lines), totR])
+        lcc_flux = np.zeros([len(lines), totL])
+        first_channel_ind = 6
+        for ind, line in enumerate(lines):
+            line_list = line.replace("  ", " ").split(" ")
+            times[:,ind] = line_list[0]
+            line_list = line_list[first_channel_ind:]
+            ryr_flux[ind,:] = line_list[1:3*totR:3]
+            line_list = line_list[3*totR:]
+            lcc_flux[ind,:] = line_list[1:3*totL:3]
+        
+        return times, ryr_flux, lcc_flux
 
     def __getCleftLogLines(self, crunum):
         """
