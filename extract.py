@@ -299,7 +299,6 @@ class extract:
         totDF.to_csv(outfile, header=True, sep=" ")
         outfile.close()
 
-
     def getChannelConcentrations(self, cleftnr=0):
         """
         get Ca concentrations at channel mouth from cleft logs given the cleftnumber
