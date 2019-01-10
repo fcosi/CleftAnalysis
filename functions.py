@@ -773,8 +773,8 @@ class Analysis:
         series = np.array(series)
         times = np.array(times)
         
-        t_peaks, peaks = self.get_Ca_peaks(times, series, smooth = smooth, time_threshold = time_threshold, start_time=1000, end_time=6000)
-        t_min, minima = self.get_Ca_sys_minima(times, series, smooth = smooth, time_threshold = time_threshold, start_time=1000, end_time=6000)
+        t_peaks, peaks = self.get_Ca_peaks(times, series, smooth = smooth, time_threshold = time_threshold, start_time, end_time)
+        t_min, minima = self.get_Ca_sys_minima(times, series, smooth = smooth, time_threshold = time_threshold, start_time, end_time)
         
         if t_peaks[0] < t_min[0]:
             t_peaks = np.delete(t_peaks, 0)
