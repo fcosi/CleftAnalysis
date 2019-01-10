@@ -116,20 +116,30 @@ class extract:
         return self.param
 
     def getSimulationFolders(self, rootdir = "sampling"):
-        """
-        get list of simulation numbers given a root directory where the sims can be found
+        """get list of simulation numbers given a root directory where the sims can be found
         needed for analysis of sampling data
         
+        The fct discards all folders in which no maxchanneldata.txt
+        file is found (i.e. the simulation did not end yet)
+        
         (this fct is independent of the folder with which the class was initialized)
+
         """
         sim_dirs = []
-        rootdir = "../" + rootdir
+        rootdir = "../" + rootdir + "/"
         for subdir, dirs, files in os.walk(rootdir):
             if len(dirs) > 0 and not "continue" in subdir:
-                for directory in dirs:
+                for directory in dirs:                    
                     try:
                         val = int(directory)
-                        sim_dirs.append(directory)
+                        # the name trick checks if maxchanneldata.txt is present in the dir,
+                        # if not it means the sim is not finished yet and it skips it
+                        name = "{}{}/maxchanneldata.txt".format(rootdir, directory)
+                        if os.path.exists(name):
+                            sim_dirs.append(directory)
+                        else:
+                            continue
+                        #sim_dirs.append(directory)                
                     except ValueError:
                         pass
         return sim_dirs
