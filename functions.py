@@ -811,3 +811,41 @@ class Analysis:
         for cleft in rel_clefts:
             res = pd.concat([res, df[df["clefts"] == cleft]])
         return res
+
+    def fastOneSimPlot(self, simnum, simfolder, first = "Ca_i", second = "Vm", third = "I_LCC"):
+        '''
+        Plots three whole time series given the simulation folder and parent folder
+        
+        Parameters
+        ----------
+        - simfolder
+        - sim parent folder
+        - first variable to be plotted (default: Ca_i)
+        - second variable to be plotted (default: Vm)
+        - third variable to be plotted (default: I_LCC)
+        
+        Returns
+        ----------
+        Plot        
+        '''
+        
+        fig1, axs = plt.subplots(3, sharex = True, figsize = (20, 11))
+        from classes import extract
+        f = extract.extract(simnum, simfolder)
+        ion = f.readIonic()
+        
+        axs[0].plot(ion["time"], ion[first], linewidth = 2)
+        axs[1].plot(ion["time"], ion[second], linewidth = 2)    
+        axs[2].plot(ion["time"], ion[third], linewidth = 2)
+        # axis labels
+        axs[0].set_ylabel(r"${}$".format(first))
+        axs[1].set_ylabel(r"${}$".format(second))
+        axs[2].set_ylabel(r"${}$".format(third))
+        axs[2].set_xlabel(r"t $[ms]$")
+        # -
+        axs[2].tick_params(axis = 'both', which = 'major')
+        
+        fig1.set_tight_layout(True)
+        
+        fig1.show()
+        
