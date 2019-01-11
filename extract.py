@@ -309,6 +309,37 @@ class extract:
         totDF.to_csv(outfile, header=True, sep=" ")
         outfile.close()
 
+    def __getChannelInformations(self, which="conc", cleftnr=0):
+        """
+        get Ca concentrations/fluxes at channel mouth from cleft logs given the cleftnumber
+        
+        Args:
+        - which: determines whether concentrations (conc) or fluxes (flux) are to be determined
+        - cleftnumber
+        
+        Return:
+        - numpy arrays with channel concentrations/fluxes and timesteps
+        """
+        lines, totR, totL = self.__getCleftLogLines(cleftnr)
+        times = np.zeros([1, len(lines)])
+        ryr_conflux = np.zeros([len(lines), totR])
+        lcc_conflux = np.zeros([len(lines), totL])
+        if which == "conc":
+            first_channel_ind = 5
+        elif which == "flux":
+            first_channel_ind = 6
+        else:
+            print("======== Some error in asked information occured ======== ")
+        for ind, line in enumerate(lines):
+            line_list = line.replace("  ", " ").split(" ")
+            times[:,ind] = line_list[0]
+            line_list = line_list[first_channel_ind:]
+            ryr_conflux[ind,:] = line_list[1:3*totR:3]
+            line_list = line_list[3*totR:]
+            lcc_conflux[ind,:] = line_list[1:3*totL:3]
+        
+        return times, ryr_conflux, lcc_conflux
+
     def getChannelConcentrations(self, cleftnr=0):
         """
         get Ca concentrations at channel mouth from cleft logs given the cleftnumber
@@ -319,18 +350,7 @@ class extract:
         Return:
         - numpy arrays with channel concentrations and timesteps
         """
-        lines, totR, totL = self.__getCleftLogLines(cleftnr)
-        times = np.zeros([1, len(lines)])
-        ryr_conc = np.zeros([len(lines), totR])
-        lcc_conc = np.zeros([len(lines), totL])
-        first_channel_ind = 5
-        for ind, line in enumerate(lines):
-            line_list = line.replace("  ", " ").split(" ")
-            times[:,ind] = line_list[0]
-            line_list = line_list[first_channel_ind:]
-            ryr_conc[ind,:] = line_list[1:3*totR:3]
-            line_list = line_list[3*totR:]
-            lcc_conc[ind,:] = line_list[1:3*totL:3]
+        times, ryr_conc, lcc_conc = self.__getChannelInformations("conc", cleftnr=cleftnr)
         
         return times, ryr_conc, lcc_conc
     
@@ -345,19 +365,7 @@ class extract:
         Return:
         - numpy arrays with channel fluxes and timesteps
         """
-        
-        lines, totR, totL = self.__getCleftLogLines(cleftnr)
-        times = np.zeros([1, len(lines)])
-        ryr_flux = np.zeros([len(lines), totR])
-        lcc_flux = np.zeros([len(lines), totL])
-        first_channel_ind = 6
-        for ind, line in enumerate(lines):
-            line_list = line.replace("  ", " ").split(" ")
-            times[:,ind] = line_list[0]
-            line_list = line_list[first_channel_ind:]
-            ryr_flux[ind,:] = line_list[1:3*totR:3]
-            line_list = line_list[3*totR:]
-            lcc_flux[ind,:] = line_list[1:3*totL:3]
+        times, ryr_flux, lcc_flux= self.__getChannelInformations("flux", cleftnr=cleftnr)
         
         return times, ryr_flux, lcc_flux
 
