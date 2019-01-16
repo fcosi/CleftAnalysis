@@ -727,7 +727,81 @@ class Analysis:
             warnings.warn("The time series might be discontinous.\nFound more than peak in a small time intervall. \t Please increase the smoothing factor!")                
         return times_maxima, peaks_maxima
 
-# ----------------------------------------------------------------------------------------------
+    def computeBiomarkers(self, sim_dirs, params_vari, start_time, end_time,
+                          sampling_dir = "sampling"):
+        """Computes several Biomarkers 
+        (max_Vm, rest_Vm, max_dVdt, dome_Vm,
+        mean and std of: APD50, APD90, Ca_peaks, Ca_dia,
+        Ca_time_to_peak) 
+        
+        given a list of parameters params_vari, a list of simulation
+        folders and starting and ending times and a sampling dir name
+        
+        Args:
+        - sim_dirs: list of simulation directories (usually from sampling)
+        - params_vari: list of parameters to be plotted against
+        - start_time
+        - end_time
+        - sampling_dir
+        
+        Returns:
+        - sim_data_df: pandas DF
+        """
+
+        from classes import extract
+        #ana = functions.Analysis()
+        data = np.zeros((0,len(params_vari)))
+        sim_data_df = pd.DataFrame(data=data, index=[], columns=params_vari)
+        counter = 0
+        #start_time=1500
+        #end_time=4000
+
+        for sim_dir in sim_dirs:
+            
+            f = extract.extract(sim_dir,sampling_dir)
+            vari = f.readIonic()
+            varm = f.readMass()
+            para = f.getParameters()
+            counter = len(sim_data_df) + 1
+            sim_data_df.at[counter,'sim'] = sim_dir
+            for param in para:
+                if param in params_vari:
+                    sim_data_df.at[counter,param] = float(para.iloc[0][param])
+
+            sim_data_df.at[counter,'max_Vm'] = self.get_max_Vm(list(vari['time']),list(vari['Vm']),start_time=start_time,end_time=end_time)
+            sim_data_df.at[counter,'rest_Vm'] = self.get_rest_Vm(list(vari['time']),list(vari['Vm']),start_time=start_time,end_time=end_time)
+            sim_data_df.at[counter,'max_dVdt'] = self.get_max_dVdt(list(vari['time']),list(vari['Vm']),3,start_time=start_time,end_time=end_time)
+            times_dome, Vm_domes = self.get_dome_Vm(list(vari['time']),list(vari['Vm']),start_time=start_time,end_time=end_time)
+    
+            if (len(Vm_domes)>0):
+                sim_data_df.at[counter,'dome_Vm'] = Vm_domes.mean()
+            else:
+                print("No dome found!")
+    
+            APD50 = self.APD(list(vari['time']),list(vari['Vm']),percent=50,start_time=start_time,end_time=end_time)
+            sim_data_df.at[counter,'APD50_mean'] = APD50.mean()
+            sim_data_df.at[counter,'APD50_std'] = APD50.std()
+    
+            APD90 = self.APD(list(vari['time']),list(vari['Vm']),percent=90,start_time=start_time,end_time=end_time)
+            sim_data_df.at[counter,'APD90_mean'] = APD90.mean()
+            sim_data_df.at[counter,'APD90_std'] = APD90.std()
+    
+            times_peaks, Ca_peaks = self.get_Ca_peaks(list(vari['time']),list(vari['Ca_i']),start_time=start_time,end_time=end_time)
+            sim_data_df.at[counter,'Ca_peak_mean'] = Ca_peaks.mean()
+            sim_data_df.at[counter,'Ca_peak_std'] = Ca_peaks.std()
+    
+            times_peaks, Ca_minima = self.get_Ca_sys_minima(list(vari['time']),list(vari['Ca_i']),start_time=start_time,end_time=end_time)
+            sim_data_df.at[counter,'Ca_dia_mean'] = Ca_minima.mean()
+            sim_data_df.at[counter,'Ca_dia_std'] = Ca_minima.std()
+            
+            times_to_peak = self.get_Ca_times_to_peak(list(vari['time']),list(vari['Ca_i']),start_time=start_time, end_time=end_time)
+    
+            sim_data_df.at[counter,'Ca_time_to_peak_mean'] = times_to_peak.mean()
+            sim_data_df.at[counter,'Ca_time_to_peak_std'] = times_to_peak.std()
+            
+            sim_data_df.at[counter,'Na_i'] = np.array(vari['Na_i'])[-100:].mean()
+        
+        return sim_data_df
 
     def get_Ca_sys_minima(self, times, series, smooth = 1000, time_threshold = 100, start_time = -np.infty, end_time = np.infty):
         """
