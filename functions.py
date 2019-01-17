@@ -748,13 +748,11 @@ class Analysis:
         - sim_data_df: pandas DF
         """
 
-        from classes import extract
-        #ana = functions.Analysis()
+        from . import extract
+
         data = np.zeros((0,len(params_vari)))
         sim_data_df = pd.DataFrame(data=data, index=[], columns=params_vari)
         counter = 0
-        #start_time=1500
-        #end_time=4000
 
         for sim_dir in sim_dirs:
             
@@ -904,7 +902,7 @@ class Analysis:
         '''
         
         fig1, axs = plt.subplots(3, sharex = True, figsize = (20, 11))
-        from classes import extract
+        from . import extract
         f = extract.extract(simnum, simfolder)
         ion = f.readIonic()
         
