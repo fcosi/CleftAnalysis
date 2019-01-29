@@ -14,6 +14,7 @@ import pandas as pd
 import scipy as sp
 import scipy.stats
 from scipy.signal import argrelextrema
+import chaospy as cp
 
 import matplotlib.pyplot as plt
 
@@ -862,7 +863,43 @@ class Analysis:
                 
         return np.array(times_to_peak)
 
-# ----------------------------------------------------------------------------------------------
+    def paramMeanUniformDistribution(self, params_vari, params_ranges):
+        '''
+        Returns dictionary of mean values and a chaospy uniform distribution
+        
+        Parameters
+        ----------
+        - params_vari: list of varied parameters
+        - params_ranges: dictionary of parameter ranges        
+        
+        Returns
+        ----------
+        - dictionary of parameter mean values
+        - chaospy uniform distribution             
+        '''
+        params_mean = dict()
+        dist_args = []
+        for pars in params_vari:
+            params_mean[pars] = 0.5*(params_ranges[pars][0]+params_ranges[pars][1])
+            dist_args.append(cp.Uniform(params_ranges[pars][0],params_ranges[pars][1]))
+        
+        dist = cp.J(*dist_args)
+        return params_mean, dist
+
+    def meshgrid4PCAplot(self):
+        '''
+        Returns X, Y, Z of a meshgrid for 2D colorcoded plot
+        
+        Parameters
+        ----------
+        - 
+        - 
+        - 
+        
+        Returns
+        ----------
+               
+        '''
 
     def reduceClefts_byRatioThreshold(self, df, threshold = 0.5, reduct = "ratioRyR"):
         '''
