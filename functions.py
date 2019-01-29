@@ -886,6 +886,42 @@ class Analysis:
         dist = cp.J(*dist_args)
         return params_mean, dist
 
+    def regressionFit(self, sim_data_df, params_vari, distr, polyOrder = 3,
+                      objective = "APD50_mean", printInfo = False):
+        '''
+        Returns approx fct from regression fit of chaospy given the biomarker DF,
+        the varied parameters, the parameter cp distribution the polynomial order 
+        and the fit objective.
+        
+        Parameters
+        ----------
+        - sim_data_df: Biomarker DF
+        - params_vari: list of varied parameters
+        - distr: uniform distribution of the varied parameter range
+        - polyOrder: order of the polynomial to be fitted
+        - objective: which value to analyse regression with
+        - printInfo: default False, if True prints additional informations
+        
+        Returns
+        ----------
+        - chaospy approximated fit function
+        '''
+        # set objective on y and parameters on x
+        ydata = np.array(list(sim_data_df[objective]))
+        xdata = np.array(sim_data_df[params_vari].T)
+        if printInfo:
+            print("""Information about fitting:
+            Number of data points: {}            
+            Number of Parameters: {}
+            Polynomial degree: {}
+            Number of polynomial coefficients that have to be calculated: {}"""
+                  .format(len(ydata), len(xdata), polyOrder,
+                          int(sp.special.binom(len(xdata) + polyOrder,polyOrder))))
+        # compute regression and fit
+        orth_poly = cp.orth_ttr(polyOrder,distr)
+        func_approx = cp.fit_regression(orth_poly, xdata, ydata, rule = 'T')
+        return func_approx
+
     def meshgrid4PCAplot(self):
         '''
         Returns X, Y, Z of a meshgrid for 2D colorcoded plot
