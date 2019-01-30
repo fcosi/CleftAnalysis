@@ -922,20 +922,54 @@ class Analysis:
         func_approx = cp.fit_regression(orth_poly, xdata, ydata, rule = 'T')
         return func_approx
 
-    def meshgrid4PCAplot(self):
+    def meshgrid4PCAplot(self, func_approx, params_vari, params_ranges,
+                         param_x = False, param_y = False, steps = 100):
         '''
-        Returns X, Y, Z of a meshgrid for 2D colorcoded plot
+        Returns X, Y, Z of a meshgrid for 2D colorcoded plot given fitted chaospy fct,
+        varied parameters, parameter ranges, the two parameters of interest and
+        optional the number of steps
         
         Parameters
         ----------
-        - 
-        - 
-        - 
+        - params_vari: list of varied parameters
+        - params_ranges: dictionary of parameter ranges  
+        - func_approx: chaospy approximated fit function
+        - param_x: first parameter of interest
+        - param_y: second parameter of interest
+        - steps: default to 100 (increase for more accuracy in plot)
         
         Returns
         ----------
-               
+        X, Y, Z as meshgrid for colorcoded 2D plot
         '''
+        if (not param_x) or (not param_y):
+            param_x = params_vari[0]
+            param_y = params_vari[1]
+            print("Warning: given paramters not specified, taking {} and {}"
+                  .format(param_x, param_y))
+        elif (not param_x in params_vari) or (not param_y in params_vari):
+            print("{} or {} not in parameter list, aborting".format(param_x, param_y))
+            import warnings
+            warnings.warn("""\nSome parameter value is not matching the parameter list""")
+        
+        params_mean = self.paramMeanUniformDistribution(params_vari, params_ranges)[0]
+        
+        x1 = np.linspace(params_ranges[param_x][0],params_ranges[param_x][1],steps)
+        x2 = np.linspace(params_ranges[param_y][0],params_ranges[param_y][1],steps)
+        X, Y = np.meshgrid(x1,x2)
+        
+        argslist = []
+        for pars in params_vari:
+            if pars==param_x:
+                argslist.append(X)
+            elif pars==param_y:
+                argslist.append(Y)
+            else:
+                argslist.append(params_mean[pars])
+        
+        Z = func_approx(*argslist)
+        return X, Y, Z
+        
 
     def reduceClefts_byRatioThreshold(self, df, threshold = 0.5, reduct = "ratioRyR"):
         '''
