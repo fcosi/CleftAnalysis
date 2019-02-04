@@ -971,6 +971,45 @@ class Analysis:
         return X, Y, Z
         
 
+    def splitBioDataFramesforXvalidation(self, sim_df, train_ratio=False,
+                                           untr_ratio=False, offset=1):
+        """
+        internal fct splitting the dataframe from biomarker analysis into two chunks
+        
+        Args:
+        - ratios: 0.0-1.0 or 0%-100% ratios of trained and untrained data
+        - offset: the offset where to start picking untrained data
+        
+        Returns 
+        - two df: the 'untrained' and 'trained' DF
+        """
+        # check for the format of the ratio given
+        if train_ratio and (1 <= float(train_ratio) <= 100):
+            train_ratio = float(train_ratio)/100
+            untr_ratio = 1 - train_ratio
+        elif untr_ratio and (1 <= float(untr_ratio) <= 100):
+            untr_ratio = float(untr_ratio)/100
+            train_ratio = 1 - train_ratio
+        elif train_ratio and (0 <= float(train_ratio) <= 1):
+            train_ratio = float(train_ratio)
+            untr_ratio = 1 - train_ratio
+        elif untr_ratio and (0 <= float(untr_ratio) <= 1):
+            untr_ratio = float(untr_ratio)
+            train_ratio = 1 - train_ratio
+        else:
+            print("Given ratios are not valid!")
+            #return sim_df
+        
+        totlines = len(sim_df)
+        untrlines = int(totlines*untr_ratio)
+        #trainedlines = totlines - untrlines
+        if offset > (totlines - untrlines):
+            offset = totlines - untrlines
+        
+        untrDF = sim_df[offset: offset+untrlines]
+        trDF = sim_df.drop(sim_df.index[offset: offset + untrlines])
+        return untrDF, trDF
+
     def reduceClefts_byRatioThreshold(self, df, threshold = 0.5, reduct = "ratioRyR"):
         '''
         Returns DF with clefts having open ratio > threshold
