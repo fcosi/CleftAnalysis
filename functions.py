@@ -921,8 +921,45 @@ class Analysis:
         orth_poly = cp.orth_ttr(polyOrder,distr)
         func_approx = cp.fit_regression(orth_poly, xdata, ydata, rule = 'T')
         return func_approx
+    
+    def calculate_regression_error(self, sim_data_df, params_vari, distr, polyOrder = 3,
+                      objective = "APD50_mean", printInfo = False):
+        '''
+        Returns the L2 and Linf error of the approx fct from regression fit of chaospy given
+        with resprect to the datapoints of the objective.
+        
+        Parameters
+        ----------
+        - sim_data_df: Biomarker DF
+        - params_vari: list of varied parameters
+        - distr: uniform distribution of the varied parameter range
+        - polyOrder: order of the polynomial to be fitted
+        - objective: which value to analyse regression with
+        - printInfo: default False, if True prints additional informations
+        
+        Returns
+        ----------
+        - chaospy approximated fit function
+        '''
+        # set objective on y and parameters on x
+        ydata = np.array(list(sim_data_df[objective]))
+        xdata = np.array(sim_data_df[params_vari].T)
+        # compute regression and fit
+        orth_poly = cp.orth_ttr(polyOrder,distr)
+        func_approx = cp.fit_regression(orth_poly, xdata, ydata, rule = 'T')
 
-    def xy4simplePCAplot(self, func_approx, params_vari, params_ranges,
+        L2_err = 0.0
+        Linf_err = 0.0
+        for i in range(0,len(xdata)):
+            L2_err += (func_approx(*xdata[i]) - ydata[i])**2
+            temp = abs(func_approx(*xdata[i]) - ydata[i])
+            if (Linf_err < temp):
+                Linf_err = temp
+        L2_err = np.sqrt(L2_err/float(len(ydata)))
+        
+        return L2_err, Linf_err
+
+    def xy4simplePCEplot(self, func_approx, params_vari, params_ranges,
                          param_x = False, steps = 100):
         '''
         Returns X, Y for 1D plot given fitted chaospy fct, varied parameters, 
@@ -953,7 +990,7 @@ class Analysis:
         y_range = func_approx(*argslist)
         return x_range, y_range
 
-    def meshgrid4PCAplot(self, func_approx, params_vari, params_ranges,
+    def meshgrid4PCEplot(self, func_approx, params_vari, params_ranges,
                          param_x = False, param_y = False, steps = 100):
         '''
         Returns X, Y, Z of a meshgrid for 2D colorcoded plot given fitted chaospy fct,
