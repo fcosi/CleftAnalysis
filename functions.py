@@ -922,6 +922,37 @@ class Analysis:
         func_approx = cp.fit_regression(orth_poly, xdata, ydata, rule = 'T')
         return func_approx
 
+    def xy4simplePCAplot(self, func_approx, params_vari, params_ranges,
+                         param_x = False, steps = 100):
+        '''
+        Returns X, Y for 1D plot given fitted chaospy fct, varied parameters, 
+        parameter ranges, the parameter of interest and optional the number of steps
+        
+        Parameters
+        ----------
+        - func_approx: chaospy approximated fit function
+        - params_vari: list of varied parameters
+        - params_ranges: dictionary of parameter ranges          
+        - param_x: first parameter of interest
+        - steps: default to 100 (increase for more accuracy in plot)
+        
+        Returns
+        ----------
+        X, Y for 1D plot
+        '''
+        x_range = np.linspace(params_ranges[param_x][0],params_ranges[param_x][1],steps)
+        params_mean = self.paramMeanUniformDistribution(params_vari, params_ranges)[0]
+        
+        argslist = []
+        for pars in params_vari:
+            if pars==param_x:
+                argslist.append(x_range)
+            else:
+                argslist.append(params_mean[pars])
+        
+        y_range = func_approx(*argslist)
+        return x_range, y_range
+
     def meshgrid4PCAplot(self, func_approx, params_vari, params_ranges,
                          param_x = False, param_y = False, steps = 100):
         '''
@@ -969,7 +1000,7 @@ class Analysis:
         
         Z = func_approx(*argslist)
         return X, Y, Z
-        
+
 
     def splitBioDataFramesforXvalidation(self, sim_df, train_ratio=False,
                                            untr_ratio=False, offset=1):
