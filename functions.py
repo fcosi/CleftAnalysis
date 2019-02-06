@@ -918,6 +918,7 @@ class Analysis:
                   .format(len(ydata), len(xdata), polyOrder,
                           int(sp.special.binom(len(xdata) + polyOrder,polyOrder))))
         # compute regression and fit
+        # rule='T': Ridge Regression/Tikhonov Regularization Order
         orth_poly = cp.orth_ttr(polyOrder,distr)
         func_approx = cp.fit_regression(orth_poly, xdata, ydata, rule = 'T')
         return func_approx
