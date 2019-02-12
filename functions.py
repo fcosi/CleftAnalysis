@@ -984,13 +984,10 @@ class Analysis:
         func_approx = cp.fit_regression(orth_poly, xdata, ydata, rule = 'T')
         return func_approx
     
-<<<<<<< HEAD
-    def calculate_regression_error(self, sim_data_df, params_vari, distr, polyOrder = 3,
-                                   objective = "APD50_mean"):
-=======
+
     def calculate_regression_error(self, sim_data_df, params_vari, func_approx,
                       objective = "APD50_mean", printInfo = False):
->>>>>>> b76e1b89c0bec969724199cb094261a06b89c6fd
+        
         '''
         Returns the L2 and Linf error of the approx fct from regression fit of chaospy given
         with resprect to the datapoints of the objective.
@@ -1008,16 +1005,8 @@ class Analysis:
         '''
         # set objective on y and parameters on x
         ydata = np.array(list(sim_data_df[objective]))
-<<<<<<< HEAD
-        xdata = np.array(sim_data_df[params_vari].T)
-        # compute regression and fit
-        orth_poly = cp.orth_ttr(polyOrder,distr)
-        func_approx = cp.fit_regression(orth_poly, xdata, ydata, rule = 'T')
-        
-=======
         xdata = np.array(sim_data_df[params_vari])
-
->>>>>>> b76e1b89c0bec969724199cb094261a06b89c6fd
+        
         L2_err = 0.0
         Linf_err = 0.0
         for i in range(0,len(xdata)):
@@ -1032,12 +1021,8 @@ class Analysis:
     def calculate_LOO_error(self, sim_data_df, params_vari, distr, polyOrder = 3,
                             objective = "APD50_mean"):
         '''
-<<<<<<< HEAD
-        Returns the L2 and Linf leave-one out (LOO) error for cross validation 
-        for a given approx fct from chaospy 
-=======
         Returns the leave-one out (LOO) error for cross validation
->>>>>>> b76e1b89c0bec969724199cb094261a06b89c6fd
+        
         with resprect to the datapoints of the objective.
         
         Parameters
