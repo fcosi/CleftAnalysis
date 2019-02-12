@@ -761,6 +761,12 @@ class Analysis:
             vari = f.readIonic()
             varm = f.readMass()
             para = f.getParameters()
+            
+            if (max(vari['time']) < end_time):
+                import warnings
+                warnings.warn("SimNr %s ends at %s, while end_time is %s. Skip!" % (sim_dir, max(vari['time']), end_time)) 
+                continue
+                
             counter = len(sim_data_df) + 1
             sim_data_df.at[counter,'sim'] = sim_dir
             for param in para:
@@ -920,21 +926,21 @@ class Analysis:
         # compute regression and fit
         orth_poly = cp.orth_ttr(polyOrder,distr)
 	
-	# compute experimental matrix
-	A_exp = np.zeros((len(xdata),len(orth_poly)))
+        # compute experimental matrix
+        A_exp = np.zeros((len(xdata),len(orth_poly)))
 
-	for i in range(len(xdata)):
-	    for j in range(len(orth_poly)):
-		A_exp[i,j] = orth_poly[j](*xdata[i])
+        for i in range(len(xdata)):
+            for j in range(len(orth_poly)):
+                A_exp[i,j] = orth_poly[j](*xdata[i])
 
-	# calculation of the pseudo inverse
-	A_inv = np.linalg.pinv(A_exp)
-	coeffs = np.dot(A_inv,ydata)
+        # calculation of the pseudo inverse
+        A_inv = np.linalg.pinv(A_exp)
+        coeffs = np.dot(A_inv,ydata)
 
-	# calculation of the approximate function
-	func_approx = coeffs[0]*orth_poly[0]
-    	for i in range(1,len(orth_poly)):
-       	    func_approx += coeffs[i]*orth_poly[i]
+        # calculation of the approximate function
+        func_approx = coeffs[0]*orth_poly[0]
+        for i in range(1,len(orth_poly)):
+            func_approx += coeffs[i]*orth_poly[i]
 	
         return func_approx
 
@@ -975,7 +981,7 @@ class Analysis:
         func_approx = cp.fit_regression(orth_poly, xdata, ydata, rule = 'T')
         return func_approx
     
-    def calculate_regression_error(self, sim_data_df, params_vari, distr, polyOrder = 3,
+    def calculate_regression_error(self, sim_data_df, params_vari, func_approx,
                       objective = "APD50_mean", printInfo = False):
         '''
         Returns the L2 and Linf error of the approx fct from regression fit of chaospy given
@@ -985,8 +991,7 @@ class Analysis:
         ----------
         - sim_data_df: Biomarker DF
         - params_vari: list of varied parameters
-        - distr: uniform distribution of the varied parameter range
-        - polyOrder: order of the polynomial to be fitted
+        - func_approx: function that was used for model approximation
         - objective: which value to analyse regression with
         
         Returns
@@ -995,10 +1000,7 @@ class Analysis:
         '''
         # set objective on y and parameters on x
         ydata = np.array(list(sim_data_df[objective]))
-        xdata = np.array(sim_data_df[params_vari].T)
-        # compute regression and fit
-        orth_poly = cp.orth_ttr(polyOrder,distr)
-        func_approx = cp.fit_regression(orth_poly, xdata, ydata, rule = 'T')
+        xdata = np.array(sim_data_df[params_vari])
 
         L2_err = 0.0
         Linf_err = 0.0
@@ -1014,7 +1016,7 @@ class Analysis:
     def calculate_LOO_error(self, sim_data_df, params_vari, distr, polyOrder = 3,
                       objective = "APD50_mean", printInfo = False):
         '''
-        Returns the L2 and Linf leave-one out (LOO) error for cross validation for a given approx fct from chaospy 
+        Returns the leave-one out (LOO) error for cross validation
         with resprect to the datapoints of the objective.
         
         Parameters
@@ -1027,35 +1029,47 @@ class Analysis:
         
         Returns
         ----------
-        - the L2 and Linf leave-one out error
+        - the leave-one out error
         '''
         
         # set objective on y and parameters on x
         ydata = np.array(list(sim_data_df[objective]))
-        xdata = np.array(sim_data_df[params_vari].T)
+        xdata = np.array(sim_data_df[params_vari])
         
         # compute regression and fit
         orth_poly = cp.orth_ttr(polyOrder,distr)
-        #func_approx = cp.fit_regression(orth_poly, xdata, ydata, rule = 'T')
 
+        # compute experimental matrix
+        A_exp = np.zeros((len(xdata),len(orth_poly)))
+
+        for i in range(len(xdata)):
+            for j in range(len(orth_poly)):
+                A_exp[i,j] = orth_poly[j](*xdata[i])
+
+        # calculation of the pseudo inverse
+        A_inv = np.linalg.pinv(A_exp)
+        coeffs = np.dot(A_inv,ydata)
+
+        # calculation of the approximate function
+        func_approx = coeffs[0]*orth_poly[0]
+        for i in range(1,len(orth_poly)):
+            func_approx += coeffs[i]*orth_poly[i]
+        
         L2_err = 0.0
-        Linf_err = 0.0
+        
+        H = np.dot(A_exp,A_inv)
+        
         for i in range(0,len(xdata)):
             
-            ydata_oo = np.copy(ydata)
-            ydata_oo = np.delete(ydata_oo,i,0)
-            xdata_oo = np.copy(xdata)
-            xdata_oo = np.delete(xdata_oo,i,1)
             
-            func_approx = cp.fit_regression(orth_poly, xdata_oo, ydata_oo, rule = 'T')
-            
-            L2_err += (func_approx(*xdata[i]) - ydata[i])**2
-            temp = abs(func_approx(*xdata[i]) - ydata[i])
-            if (Linf_err < temp):
-                Linf_err = temp
+            h = H[i,i]
+                                    
+            L2_err += ((func_approx(*xdata[i]) - ydata[i])/(1.0 - h))**2
+                          
         L2_err = np.sqrt(L2_err/float(len(ydata)))
         
-        return L2_err, Linf_err
+        return L2_err
+    
 
     def xy4simplePCEplot(self, func_approx, params_vari, params_ranges,
                          param_x = False, steps = 100):
