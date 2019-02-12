@@ -889,6 +889,59 @@ class Analysis:
     def regressionFit(self, sim_data_df, params_vari, distr, polyOrder = 3,
                       objective = "APD50_mean", printInfo = False):
         '''
+        Returns approx fct from regression fit given the biomarker DF,
+        the varied parameters, the parameter cp distribution the polynomial order 
+        and the fit objective.
+        
+        Parameters
+        ----------
+        - sim_data_df: Biomarker DF
+        - params_vari: list of varied parameters
+        - distr: uniform distribution of the varied parameter range
+        - polyOrder: order of the polynomial to be fitted
+        - objective: which value to analyse regression with
+        - printInfo: default False, if True prints additional informations
+        
+        Returns
+        ----------
+        - approximated fit function
+        '''
+        # set objective on y and parameters on x
+        ydata = np.array(list(sim_data_df[objective]))
+        xdata = np.array(sim_data_df[params_vari])
+        if printInfo:
+            print("""Information about fitting:
+            Number of data points: {}            
+            Number of Parameters: {}
+            Polynomial degree: {}
+            Number of polynomial coefficients that have to be calculated: {}"""
+                  .format(len(ydata), len(xdata.T), polyOrder,
+                          int(sp.special.binom(len(xdata.T) + polyOrder,polyOrder))))
+        # compute regression and fit
+        orth_poly = cp.orth_ttr(polyOrder,distr)
+	
+	# compute experimental matrix
+	A_exp = np.zeros((len(xdata),len(orth_poly)))
+
+	for i in range(len(xdata)):
+	    for j in range(len(orth_poly)):
+		A_exp[i,j] = orth_poly[j](*xdata[i])
+
+	# calculation of the pseudo inverse
+	A_inv = np.linalg.pinv(A_exp)
+	coeffs = np.dot(A_inv,ydata)
+
+	# calculation of the approximate function
+	func_approx = coeffs[0]*orth_poly[0]
+    	for i in range(1,len(orth_poly)):
+       	    func_approx += coeffs[i]*orth_poly[i]
+	
+        return func_approx
+
+
+    def regressionFit_cp(self, sim_data_df, params_vari, distr, polyOrder = 3,
+                      objective = "APD50_mean", printInfo = False):
+        '''
         Returns approx fct from regression fit of chaospy given the biomarker DF,
         the varied parameters, the parameter cp distribution the polynomial order 
         and the fit objective.
