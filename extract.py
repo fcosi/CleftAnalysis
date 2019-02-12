@@ -123,7 +123,7 @@ class extract:
         file is found (i.e. the simulation did not end yet)
         
         (this fct is independent of the folder with which the class was initialized)
-
+        
         """
         sim_dirs = []
         rootdir = "../" + rootdir + "/"
