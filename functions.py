@@ -928,22 +928,21 @@ class Analysis:
 	
         # compute experimental matrix
         A_exp = np.zeros((len(xdata),len(orth_poly)))
-
+        
         for i in range(len(xdata)):
             for j in range(len(orth_poly)):
                 A_exp[i,j] = orth_poly[j](*xdata[i])
-
+        
         # calculation of the pseudo inverse
         A_inv = np.linalg.pinv(A_exp)
         coeffs = np.dot(A_inv,ydata)
-
-
+        
+        
         # calculation of the approximate function
         func_approx = coeffs[0]*orth_poly[0]
         for i in range(1,len(orth_poly)):
             func_approx += coeffs[i]*orth_poly[i]
-
-
+        
         return func_approx
 
 
