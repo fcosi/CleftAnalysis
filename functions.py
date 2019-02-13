@@ -988,7 +988,7 @@ class Analysis:
                       objective = "APD50_mean", printInfo = False):
         
         '''
-        Returns the L2 and Linf error of the approx fct from regression fit of chaospy given
+        Returns the L^2, L^{\infty} and the relative error of the approx fct from regression fit of chaospy given
         with resprect to the datapoints of the objective.
         
         Parameters
@@ -1008,19 +1008,23 @@ class Analysis:
         
         L2_err = 0.0
         Linf_err = 0.0
+        rel_err = 0.0
+        
         for i in range(0,len(xdata)):
             L2_err += (func_approx(*xdata[i]) - ydata[i])**2
             temp = abs(func_approx(*xdata[i]) - ydata[i])
+            rel_err += abs((func_approx(*xdata[i]) - ydata[i])/ydata[i])
             if (Linf_err < temp):
                 Linf_err = temp
         L2_err = np.sqrt(L2_err/float(len(ydata)))
+        rel_err = rel_err/float(len(ydata))
         
-        return L2_err, Linf_err
+        return L2_err, Linf_err, rel_err 
     
     def calculate_LOO_error(self, sim_data_df, params_vari, distr, polyOrder = 3,
-                            objective = "APD50_mean"):
+                            objective = "APD50_mean", printInfo = False, analytical = True):
         '''
-        Returns the leave-one out (LOO) error for cross validation
+        Returns the leave-one out (LOO) error for cross validation as well as the Q2 regression error estimator
         
         with resprect to the datapoints of the objective.
         
@@ -1034,16 +1038,19 @@ class Analysis:
         
         Returns
         ----------
-        - the leave-one out error
+        - L2 leave-one out error
+        - Linf leave-one out error 
+        - relative leave-one out error 
+        - Q2 regression error estimator
         '''
         
         # set objective on y and parameters on x
         ydata = np.array(list(sim_data_df[objective]))
         xdata = np.array(sim_data_df[params_vari])
         
-        # compute regression and fit
+        # construct orthonormal basis
         orth_poly = cp.orth_ttr(polyOrder,distr)
-
+        
         # compute experimental matrix
         A_exp = np.zeros((len(xdata),len(orth_poly)))
 
@@ -1055,25 +1062,78 @@ class Analysis:
         A_inv = np.linalg.pinv(A_exp)
         coeffs = np.dot(A_inv,ydata)
 
-        # calculation of the approximate function
+        # calculation of the approximate function 
+        
         func_approx = coeffs[0]*orth_poly[0]
         for i in range(1,len(orth_poly)):
             func_approx += coeffs[i]*orth_poly[i]
-        
+
+        rel_err = 0.0
         L2_err = 0.0
-        
-        H = np.dot(A_exp,A_inv)
-        
-        for i in range(0,len(xdata)):
+        Linf_err = 0.0
+       
+        if (analytical):
+            # fast analytical computation
             
+            H = np.dot(A_exp,A_inv)
             
-            h = H[i,i]
-                                    
-            L2_err += ((func_approx(*xdata[i]) - ydata[i])/(1.0 - h))**2
-                          
-        L2_err = np.sqrt(L2_err/float(len(ydata)))
+            for i in range(0,len(xdata)):
+                             
+                h = H[i,i]                         
+                L2_err += ((func_approx(*xdata[i]) - ydata[i])/(1.0 - h))**2
+                rel_err += abs((func_approx(*xdata[i]) - ydata[i])/(ydata[i] - ydata[i]*h))
+                abs_err = abs((func_approx(*xdata[i]) - ydata[i])/(1.0 - h))
+                if (Linf_err < abs_err):
+                    Linf_err = abs_err
+                            
+            L2_err = np.sqrt(L2_err/float(len(ydata)))
+            rel_err = rel_err/float(len(ydata))
+            
+        else:
+            # slow direct computation for comparison
+             
+            for k in range(0,len(xdata)):
+
+                ydata_oo = np.copy(ydata)
+                ydata_oo = np.delete(ydata_oo,k,0)
+                xdata_oo = np.copy(xdata)
+                xdata_oo = np.delete(xdata_oo,k,0)
+                
+                A_exp_oo = np.zeros((len(xdata_oo),len(orth_poly)))
+
+                for i in range(len(xdata_oo)):
+                    for j in range(len(orth_poly)):
+                        A_exp_oo[i,j] = orth_poly[j](*xdata_oo[i])
+
+                # calculation of the pseudo inverse
+                A_inv_oo = np.linalg.pinv(A_exp_oo)
+                coeffs_oo = np.dot(A_inv_oo,ydata_oo)
+
+                # calculation of the approximate function
+                func_approx_oo = coeffs_oo[0]*orth_poly[0]
+                for i in range(1,len(orth_poly)):
+                    func_approx_oo += coeffs_oo[i]*orth_poly[i]
+                
+                
+                L2_err += (func_approx_oo(*xdata[k]) - ydata[k])**2
+                abs_err = abs(func_approx_oo(*xdata[k]) - ydata[k])
+                rel_err += abs((func_approx_oo(*xdata[k]) - ydata[k])/ydata[k])
+                if (Linf_err < abs_err):
+                    Linf_err = abs_err
+                    
+            L2_err = np.sqrt(L2_err/float(len(ydata)))
+            rel_err = rel_err/float(len(ydata))
         
-        return L2_err
+        # computation of the Q2 error estimator
+        Q2 = 0.0
+        var_obj = ydata.var()
+        if (var_obj > 0.0):
+            Q2 = 1.0 -  L2_err/var_obj
+        else:
+            import warnings
+            warnings.warn("""\n Variance of the data is zero!""")
+            
+        return L2_err, Linf_err, rel_err, Q2
     
 
     def xy4simplePCEplot(self, func_approx, params_vari, params_ranges,
