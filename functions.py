@@ -1073,8 +1073,32 @@ class Analysis:
                           
         L2_err = np.sqrt(L2_err/float(len(ydata)))
         
-        return L2_err
-    
+        return L2_err    
+
+    def oneDnormSlopeFit(self, sim_df, params_ranges, obj, param):
+        '''
+        Returns coefficients and covariance matrix of a 1D first order polynomial fit 
+        to objective given the simulation data, the objective of the fit and 
+        the parameter vs which to fit.
+        
+        Args
+        ----------
+        - sim_df: simulation DF
+        - params_ranges: ranges of parameter (for normalisation)
+        - obj: objective of fit
+        - param: parameter to be fitted
+        
+        Returns
+        ----------
+        z: list of fit coefficients
+        cov: covariance matrix
+        '''
+        x=sim_data_df[param]/max(params_ranges[param])
+        y=sim_data_df[obj]
+        
+        z, cov = np.polyfit(x, y, deg=1, cov=True)
+        
+        return z, cov
 
     def xy4simplePCEplot(self, func_approx, params_vari, params_ranges,
                          param_x = False, steps = 100):
