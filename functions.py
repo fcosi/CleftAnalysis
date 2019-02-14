@@ -1132,32 +1132,7 @@ class Analysis:
             import warnings
             warnings.warn("""\n Variance of the data is zero!""")
             
-        return L2_err, Linf_err, rel_err, Q2
-
-    def oneDnormSlopeFit(self, sim_df, params_ranges, obj, param):
-        '''
-        Returns coefficients and covariance matrix of a 1D first order polynomial fit 
-        to objective given the simulation data, the objective of the fit and 
-        the parameter vs which to fit.
-        
-        Args
-        ----------
-        - sim_df: simulation DF
-        - params_ranges: ranges of parameter (for normalisation)
-        - obj: objective of fit
-        - param: parameter to be fitted
-        
-        Returns
-        ----------
-        z: list of fit coefficients
-        cov: covariance matrix
-        '''
-        x=sim_data_df[param]/max(params_ranges[param])
-        y=sim_data_df[obj]
-        
-        z, cov = np.polyfit(x, y, deg=1, cov=True)
-        
-        return z, cov    
+        return L2_err, Linf_err, rel_err, Q2 
 
     def slope_error1DFit(self, sim_df, params_vari, params_ranges, obj, getaxes = False):
         '''
@@ -1186,8 +1161,8 @@ class Analysis:
         y={}
         fit={}
         for pars in params_vari:
-            xtmp=sim_data_df[pars]/max(params_ranges[pars])
-            ytmp=sim_data_df[obj]
+            xtmp=sim_df[pars]/max(params_ranges[pars])
+            ytmp=sim_df[obj]
             f, cov = np.polyfit(xtmp, ytmp, deg=1, cov=True)
             slope[pars] = f[0]
             err[pars] = np.sqrt(np.diag(cov))[0]
