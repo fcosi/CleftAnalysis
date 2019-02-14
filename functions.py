@@ -1160,16 +1160,23 @@ class Analysis:
         x={}
         y={}
         fit={}
+        
         for pars in params_vari:
             xtmp=sim_df[pars]/max(params_ranges[pars])
             ytmp=sim_df[obj]
             f, cov = np.polyfit(xtmp, ytmp, deg=1, cov=True)
+            
             slope[pars] = f[0]
             err[pars] = np.sqrt(np.diag(cov))[0]
             x[pars] = xtmp
             y[pars] = ytmp
             fit[pars] = np.poly1d(f)
-            
+        
+        slope = pd.DataFrame(slope, index=[0])
+        err = pd.DataFrame(err, index=[0])
+        x = pd.DataFrame(x)
+        y = pd.DataFrame(y)
+        
         if getaxes:
             return slope, err, x, y, fit
         else:
