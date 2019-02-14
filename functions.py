@@ -1159,6 +1159,48 @@ class Analysis:
         
         return z, cov    
 
+    def slope_error1DFit(self, sim_df, params_vari, params_ranges, obj, getaxes = False):
+        '''
+        Returns slope and error of slope fitting from 1D first order polynomial fit to objective 
+        given the simulation data, the objective of the fit and 
+        the parameter vs which to fit.
+        Default arg getaxes allows to get the lists of x, y and fit values for each parameter
+        
+        Args
+        ----------
+        - sim_df: simulation DF
+        - params_vari: list of parameters
+        - params_ranges: ranges of parameter (for normalisation)
+        - obj: objective of fit
+        - getaxes=False: default arg to output also axes lists (for plotting)
+        
+        Returns
+        ----------
+        slope: dict of fitted slopes
+        err: dict of errors
+        x, y, fit: np arrays of plotting values
+        '''
+        slope = {}
+        err = {}
+        x={}
+        y={}
+        fit={}
+        for pars in params_vari:
+            xtmp=sim_data_df[pars]/max(params_ranges[pars])
+            ytmp=sim_data_df[obj]
+            f, cov = np.polyfit(xtmp, ytmp, deg=1, cov=True)
+            slope[pars] = f[0]
+            err[pars] = np.sqrt(np.diag(cov))[0]
+            x[pars] = xtmp
+            y[pars] = ytmp
+            fit[pars] = np.poly1d(f)
+            
+        if getaxes:
+            return slope, err, x, y, fit
+        else:
+            return slope, err
+
+
     def xy4simplePCEplot(self, func_approx, params_vari, params_ranges,
                          param_x = False, steps = 100):
         '''
