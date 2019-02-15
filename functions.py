@@ -1127,7 +1127,7 @@ class Analysis:
         Q2 = 0.0
         var_obj = ydata.var()
         if (var_obj > 0.0):
-            Q2 = 1.0 -  L2_err/var_obj
+            Q2 = 1.0 -  L2_err*L2_err/var_obj
         else:
             import warnings
             warnings.warn("""\n Variance of the data is zero!""")
