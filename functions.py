@@ -1053,21 +1053,21 @@ class Analysis:
         
         # compute experimental matrix
         A_exp = np.zeros((len(xdata),len(orth_poly)))
-
+        
         for i in range(len(xdata)):
             for j in range(len(orth_poly)):
                 A_exp[i,j] = orth_poly[j](*xdata[i])
-
+                
         # calculation of the pseudo inverse
         A_inv = np.linalg.pinv(A_exp)
         coeffs = np.dot(A_inv,ydata)
-
+        
         # calculation of the approximate function 
         
         func_approx = coeffs[0]*orth_poly[0]
         for i in range(1,len(orth_poly)):
             func_approx += coeffs[i]*orth_poly[i]
-
+            
         rel_err = 0.0
         L2_err = 0.0
         Linf_err = 0.0
@@ -1092,22 +1092,22 @@ class Analysis:
             # slow direct computation for comparison
              
             for k in range(0,len(xdata)):
-
+                
                 ydata_oo = np.copy(ydata)
                 ydata_oo = np.delete(ydata_oo,k,0)
                 xdata_oo = np.copy(xdata)
                 xdata_oo = np.delete(xdata_oo,k,0)
                 
                 A_exp_oo = np.zeros((len(xdata_oo),len(orth_poly)))
-
+                
                 for i in range(len(xdata_oo)):
                     for j in range(len(orth_poly)):
                         A_exp_oo[i,j] = orth_poly[j](*xdata_oo[i])
-
+                        
                 # calculation of the pseudo inverse
                 A_inv_oo = np.linalg.pinv(A_exp_oo)
                 coeffs_oo = np.dot(A_inv_oo,ydata_oo)
-
+                
                 # calculation of the approximate function
                 func_approx_oo = coeffs_oo[0]*orth_poly[0]
                 for i in range(1,len(orth_poly)):
@@ -1176,7 +1176,8 @@ class Analysis:
         err = pd.DataFrame(err, index=[0])
         x = pd.DataFrame(x)
         y = pd.DataFrame(y)
-        
+        if slope.isnull().values.any():
+            print("Attention: the fit has some NaN value")
         if getaxes:
             return slope, err, x, y, fit
         else:
