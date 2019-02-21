@@ -181,7 +181,7 @@ class extract:
             return ryr_numbers, lcc_numbers, radii, ryr_location, lcc_location
         else:
             return ryr_numbers, lcc_numbers
-     
+
     def getCRUConcentrations(self, cleftnr):
         """
         get local Ca concentrations for a given CRU in the bulk and in the jSR
@@ -193,7 +193,6 @@ class extract:
         - numpy arrays with timesteps and bulk/jSR concentrations
         """
         
-        
         lines, totR, totL = self.__getCleftLogLines(cleftnr)
         times = np.zeros(len(lines))
         bulk_conc = np.zeros(len(lines))
@@ -204,7 +203,7 @@ class extract:
             times[ind] = line_list[0]
             bulk_conc[ind] = line_list[1]
             jsr_conc[ind] = line_list[2]
-                       
+            
         return times, bulk_conc, jsr_conc
     
     def getCRUFluxes(self, cleftnr):
@@ -228,7 +227,7 @@ class extract:
             times[ind] = line_list[0]
             refill_flux[ind] = line_list[3]
             cru_flux[ind] = line_list[4]
-                       
+            
         return times, refill_flux, cru_flux
 
     def __getLocations(self, nryr, nlcc, cru_info_list):
