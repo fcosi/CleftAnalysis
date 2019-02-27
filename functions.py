@@ -1183,8 +1183,63 @@ class Analysis:
         else:
             return slope, err
 
+    def kNNRegression(self, sim_data_df, obj, param, k=15, get_error=False, steps=500):
+        '''
+        Returns knn prediction on np.linspace() and eventually error 
+        given x and y training data from objective and parameter
+        
+        Parameters
+        ----------
+        - sim_data_df: dataframe to analyse
+        - obj: objective to be analysed
+        - param: parameter to consider
+        - k: number of NN to consider (can be set to "optimal" or "optimal-force")
+        - get_error: output also the root mean square error
+        - steps: adjust number of steps of the linspace
+        
+        Returns
+        ----------
+        x_predict, y_predict, error (optional)
+        '''
+        from sklearn import neighbors
+        from sklearn.metrics import mean_squared_error
+        
+        y = sim_data_df[obj]
+        x = np.array(sim_data_df[param])
+        x = x.reshape(len(sim_data_df[param]), 1)
+        T = np.linspace(min(x), max(x), steps)
+        
+        if "opt" in str(k):
+            err = []
+            for i in range(1,150):
+                knn = neighbors.KNeighborsRegressor(i, weights="uniform", algorithm="kd_tree")
+                y_ = knn.fit(x, y).predict(T)
+                err.append(np.sqrt(mean_squared_error(T, y_)))
+            optk = err.index(min(err))+1
+            
+            # check if optimisation is failing and if it was forced 
+            if optk > 40 and "force" in k:
+                k = optk 
+                print("forcing k to {}".format(k))               
+            elif optk > 40 and not "force" in k:
+                k = 15
+                print("keep k at {} (avoided forcing to {})".format(k, optk))
+            else:
+                k = optk
+                print("k optimised to {}".format(k))
+        
+        knn = neighbors.KNeighborsRegressor(k, weights="uniform",
+                                            algorithm="kd_tree", leaf_size=30)
+        y_ = knn.fit(x, y).predict(T)
+        error = np.sqrt(mean_squared_error(T, y_))
+        
+        if get_error:
+            return T, y_, error
+        else:
+            return T, y_
+        
 
-    def xy4simplePCEplot(self, func_approx, params_vari, params_ranges,
+    def xy4simplePCAplot(self, func_approx, params_vari, params_ranges,
                          param_x = False, steps = 100):
         '''
         Returns X, Y for 1D plot given fitted chaospy fct, varied parameters, 
