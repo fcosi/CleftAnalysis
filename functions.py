@@ -14,6 +14,7 @@ import pandas as pd
 import scipy as sp
 import scipy.stats
 from scipy.signal import argrelextrema
+from sklearn.linear_model import Lasso
 import chaospy as cp
 
 import matplotlib.pyplot as plt
@@ -981,6 +982,74 @@ class Analysis:
         # rule='T': Ridge Regression/Tikhonov Regularization Order
         orth_poly = cp.orth_ttr(polyOrder,distr)
         func_approx = cp.fit_regression(orth_poly, xdata, ydata, rule = 'T')
+        return func_approx
+    
+    def lasso_regression(self, sim_data_df, params_vari, distr, polyOrder = 3, alpha = 1.0,
+                      objective = "APD50_mean", printInfo = False):
+        '''
+        Returns approx fct from regression fit with the lasso fit method given the biomarker DF,
+        the varied parameters, the parameter cp distribution the polynomial order 
+        and the fit objective.
+        
+        Parameters
+        ----------
+        - sim_data_df: Biomarker DF
+        - params_vari: list of varied parameters
+        - distr: uniform distribution of the varied parameter range
+        - polyOrder: order of the polynomial to be fitted
+        - alpha: penalizes the L1-norm of polynomial coefficients
+        - objective: which value to analyse regression with
+        - printInfo: default False, if True prints additional informations
+        
+        Returns
+        ----------
+        - chaospy approximated fit function
+        '''
+        
+        
+        orth_poly = cp.orth_ttr(polyOrder,distr)
+        
+        
+        
+        ydata = np.array(list(sim_data_df[objective]))
+        xdata = np.array(sim_data_df[params_vari])
+        
+        if printInfo:
+            print("""Information about fitting:
+            Number of data points: {}            
+            Number of Parameters: {}
+            Polynomial degree: {}
+            Number of polynomial coefficients that have to be calculated: {}"""
+                  .format(len(ydata), len(xdata.T), polyOrder,
+                          int(sp.special.binom(len(xdata.T) + polyOrder,polyOrder))))
+        
+        data = sim_data_df[['kplus','kclose','J_R','J_L','Vp_max',objective]]
+        
+        for i in range(0,len(orth_poly)):
+            colname = 'phi_%d'%i
+
+            
+            #power of 1 is already there
+            #new var will be x_power
+            temp = np.zeros(len(xdata))
+            for j in range(len(xdata)):
+                temp[j] = orth_poly[i](*xdata[j])
+            data[colname] = temp
+       
+        predictors = ['phi_%d'%i for i in range(len(orth_poly))]
+        lassoreg = Lasso(alpha=alpha,normalize=True, max_iter=1e5)
+        lassoreg.fit(data[predictors],data[objective])
+        #y_pred = lassoreg.predict(data[predictors])
+        ##print(y_pred)
+        #rss = sum((y_pred-data[obj])**2)
+        #print(np.sqrt(rss/166))
+        coeffs = lassoreg.coef_
+        
+        func_approx = coeffs[0]*orth_poly[0] + lassoreg.intercept_*orth_poly[0]
+        for i in range(1,len(orth_poly)):
+            func_approx += coeffs[i]*orth_poly[i]
+        
+        
         return func_approx
     
 
