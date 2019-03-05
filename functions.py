@@ -806,6 +806,8 @@ class Analysis:
             sim_data_df.at[counter,'Ca_time_to_peak_std'] = times_to_peak.std()
             
             sim_data_df.at[counter,'Na_i'] = np.array(vari['Na_i'])[-100:].mean()
+            
+            sim_data_df.at[counter, 'folder'] = "../{}/{}/".format(sampling_dir, sim_dir)
         
         return sim_data_df
 
