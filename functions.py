@@ -14,7 +14,8 @@ import pandas as pd
 import scipy as sp
 import scipy.stats
 from scipy.signal import argrelextrema
-from sklearn.linear_model import Lasso
+from sklearn.linear_model import *
+from sklearn.model_selection import cross_val_score
 import chaospy as cp
 
 import matplotlib.pyplot as plt
@@ -829,13 +830,12 @@ class Analysis:
         In cleftdyn fluo4 is represented by "Bspecial". 
         
         Args:
-        - series of the buffer in this case Bspecial.
+        - series of the buffer concentrations in this case 'Bspecial'.
         - parameters that have been used for the simulation 
         
         Returns:
         - series of experimental calcium
         """
-        
         
         fluo4_conc = np.array(fluo4_conc)
         
@@ -1022,7 +1022,7 @@ class Analysis:
         func_approx = cp.fit_regression(orth_poly, xdata, ydata, rule = 'T')
         return func_approx
     
-    def lasso_regression(self, sim_data_df, params_vari, distr, polyOrder = 3, alpha = 1.0,
+    def lasso_regression(self, sim_data_df, params_vari, distr, alphas, polyOrder = 3, 
                       objective = "APD50_mean", printInfo = False):
         '''
         Returns approx fct from regression fit with the lasso fit method given the biomarker DF,
@@ -1035,22 +1035,27 @@ class Analysis:
         - params_vari: list of varied parameters
         - distr: uniform distribution of the varied parameter range
         - polyOrder: order of the polynomial to be fitted
-        - alpha: penalizes the L1-norm of polynomial coefficients
+        - alphas: list of alphas, alpha penalizes the L1-norm of polynomial coefficients
         - objective: which value to analyse regression with
         - printInfo: default False, if True prints additional informations
         
         Returns
         ----------
-        - chaospy approximated fit function
+        - a disctionary with
+            - chaospy approximated fit function
+            - alpha that maximazes the cross validation score
+            - cross validation score
+            - coefficient of determination (R2)
         '''
         
         
+        
         orth_poly = cp.orth_ttr(polyOrder,distr)
-        
-        
-        
+               
         ydata = np.array(list(sim_data_df[objective]))
         xdata = np.array(sim_data_df[params_vari])
+        
+        res = dict()
         
         if printInfo:
             print("""Information about fitting:
@@ -1066,7 +1071,6 @@ class Analysis:
         for i in range(0,len(orth_poly)):
             colname = 'phi_%d'%i
 
-            
             #power of 1 is already there
             #new var will be x_power
             temp = np.zeros(len(xdata))
@@ -1075,20 +1079,45 @@ class Analysis:
             data[colname] = temp
        
         predictors = ['phi_%d'%i for i in range(len(orth_poly))]
-        lassoreg = Lasso(alpha=alpha,normalize=True, max_iter=1e5)
+        
+        best_alpha = 0.0
+        best_cross_val_score = -np.infty
+        r2_score = -np.infty
+  
+        for alpha in alphas:
+            val = 0.0
+            r2_val = 0.0
+            if alpha == 0.0:
+                linreg = LinearRegression(normalize=True)
+                reg = linreg.fit(data[predictors],data[objective])
+                val = cross_val_score(linreg,data[predictors],data[objective],cv=5).mean()
+                r2_val = reg.score(data[predictors],data[objective])
+            else:
+                lassoreg = Lasso(alpha=alpha,normalize=True, max_iter=1e5)
+                lassoreg.fit(data[predictors],data[objective])
+                val = cross_val_score(lassoreg,data[predictors],data[objective],cv=5).mean()
+                r2_val = lassoreg.score(data[predictors],data[objective])
+            
+            if (val > best_cross_val_score):
+                best_cross_val_score = val
+                best_alpha = alpha
+                r2_score = r2_val
+            
+        res['alpha'] = best_alpha
+        res['cross_val_score'] = best_cross_val_score
+        res['r2_score'] = r2_score
+        
+        lassoreg = Lasso(alpha = best_alpha, normalize = True, max_iter = 1e5)   
         lassoreg.fit(data[predictors],data[objective])
-        #y_pred = lassoreg.predict(data[predictors])
-        ##print(y_pred)
-        #rss = sum((y_pred-data[obj])**2)
-        #print(np.sqrt(rss/166))
         coeffs = lassoreg.coef_
         
         func_approx = coeffs[0]*orth_poly[0] + lassoreg.intercept_*orth_poly[0]
         for i in range(1,len(orth_poly)):
             func_approx += coeffs[i]*orth_poly[i]
         
+        res['func_approx'] = func_approx
         
-        return func_approx
+        return res
     
 
     def calculate_regression_error(self, sim_data_df, params_vari, func_approx,
