@@ -908,6 +908,30 @@ class Analysis:
                 
         return np.array(times_to_peak)
 
+    def simFoldersHighSTD(self, sim_df, obj = "APD90_std", mid_val=None):
+        """
+        Returns np.array of simulation folders with obj values greater than mid value
+        
+        Parameters
+        ----------
+        sim_df: simulation DF
+        obj: objective (default the APD90_std, since fct meant to study alternans)
+        mid_val: optional externally fixed threshold value
+        
+        Returns
+        ----------
+        np.array with folder names
+        """
+        if not mid_val:
+            mid_val = (max(sim_df[obj]) + min(sim_df[obj]) )/2
+        else:
+            mid_val = mid_val
+        
+        greater = sim_df[sim_df[obj] > mid_val]                
+        sim_folders = greater["folder"]
+        
+        return np.array(sim_folders)
+
     def paramMeanUniformDistribution(self, params_vari, params_ranges):
         '''
         Returns dictionary of mean values and a chaospy uniform distribution
@@ -1430,7 +1454,9 @@ class Analysis:
                                            untr_ratio=False, offset=1):
         """
         internal fct splitting the dataframe from biomarker analysis into two chunks
-        
+        vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+        NOTE: USE sklearn.model_selection.train_test_split instead OF THIS FCT!
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
         Args:
         - ratios: 0.0-1.0 or 0%-100% ratios of trained and untrained data
         - offset: the offset where to start picking untrained data
