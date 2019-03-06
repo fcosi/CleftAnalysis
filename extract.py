@@ -127,21 +127,20 @@ class extract:
         """
         sim_dirs = []
         rootdir = "../" + rootdir + "/"
-        for subdir, dirs, files in os.walk(rootdir):
-            if len(dirs) > 0 and not "continue" in subdir:
-                for directory in dirs:                    
-                    try:
-                        val = int(directory)
-                        # the name trick checks if maxchanneldata.txt is present in the dir,
-                        # if not it means the sim is not finished yet and it skips it
-                        name = "{}{}/maxchanneldata.txt".format(rootdir, directory)
-                        if os.path.exists(name):
-                            sim_dirs.append(directory)
-                        else:
-                            continue
-                        #sim_dirs.append(directory)                
-                    except ValueError:
-                        pass
+        dirs = os.listdir(rootdir)
+        for directory in dirs:                    
+            try:
+                val = int(directory)
+                # the name trick checks if maxchanneldata.txt is present in the dir,
+                # if not it means the sim is not finished yet and it skips it
+                name = "{}{}/maxchanneldata.txt".format(rootdir, directory)
+                if os.path.exists(name):
+                    sim_dirs.append(directory)
+                else:
+                    continue
+                    #sim_dirs.append(directory)                
+            except ValueError:
+                pass
         return sim_dirs
 
     def crusInfo(self, getRadius = False, getLocations = False):
