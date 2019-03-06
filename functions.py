@@ -806,8 +806,7 @@ class Analysis:
             sim_data_df.at[counter,'Ca_time_to_peak_std'] = times_to_peak.std()
             
             sim_data_df.at[counter,'Na_i'] = np.array(vari['Na_i'])[-100:].mean()
-            
-            
+
             cyto_vol = float(para['xmax']*para['ymax']*para['zmax'])
             bspecial_conc = np.array(varm['SpecialBm'])/(float(cyto_vol))
             ca_exp =  self.get_experimental_Ca(bspecial_conc,para)
@@ -820,6 +819,8 @@ class Analysis:
             sim_data_df.at[counter,'Ca_exp_dia_mean'] = Ca_exp_minima.mean()
             sim_data_df.at[counter,'Ca_exp_dia_std'] = Ca_exp_minima.std()
             
+            sim_data_df.at[counter, 'folder'] = "../{}/{}/".format(sampling_dir, sim_dir)
+
         
         return sim_data_df
     
