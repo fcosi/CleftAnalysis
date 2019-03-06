@@ -806,8 +806,45 @@ class Analysis:
             sim_data_df.at[counter,'Ca_time_to_peak_std'] = times_to_peak.std()
             
             sim_data_df.at[counter,'Na_i'] = np.array(vari['Na_i'])[-100:].mean()
+            
+            
+            cyto_vol = float(para['xmax']*para['ymax']*para['zmax'])
+            bspecial_conc = np.array(varm['SpecialBm'])/(float(cyto_vol))
+            ca_exp =  self.get_experimental_Ca(bspecial_conc,para)
+            
+            times_peaks, Ca_exp_peaks = self.get_Ca_peaks(list(varm['Time']),ca_exp,start_time=start_time,end_time=end_time)
+            sim_data_df.at[counter,'Ca_exp_peak_mean'] = Ca_exp_peaks.mean()
+            sim_data_df.at[counter,'Ca_exp_peak_std'] = Ca_exp_peaks.std()
+    
+            times_peaks, Ca_exp_minima = self.get_Ca_sys_minima(list(varm['Time']),ca_exp,start_time=start_time,end_time=end_time)
+            sim_data_df.at[counter,'Ca_exp_dia_mean'] = Ca_exp_minima.mean()
+            sim_data_df.at[counter,'Ca_exp_dia_std'] = Ca_exp_minima.std()
+            
         
         return sim_data_df
+    
+    def get_experimental_Ca(self, fluo4_conc, parameters):
+        """Computes the experimental calcium concentration, which is inferred from a fluorescent dye as fluo4. 
+        In cleftdyn fluo4 is represented by "Bspecial". 
+        
+        Args:
+        - series of the buffer in this case Bspecial.
+        - parameters that have been used for the simulation 
+        
+        Returns:
+        - series of experimental calcium
+        """
+        
+        
+        fluo4_conc = np.array(fluo4_conc)
+        
+        Fmax = float(parameters['Bspecial_tot'])
+        Fmin = 0.0
+        Kd = float(parameters['kspecial_minus'])/float(parameters['kspecial_plus'])
+                
+        ca_exp = Kd*(fluo4_conc- Fmin)/(Fmax - fluo4_conc)
+        
+        return ca_exp
 
     def get_Ca_sys_minima(self, times, series, smooth = 1000, time_threshold = 100, start_time = -np.infty, end_time = np.infty):
         """
