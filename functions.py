@@ -438,7 +438,8 @@ class Analysis:
 
 # ----------------------------------------------------------------------------------------------
     
-    def APD(self, times, series, percent = 50.0, start_time = -np.infty, end_time = np.infty):
+    def APD(self, times, series, percent = 50.0, start_time = -np.infty, end_time = np.infty,
+            forceNoDAD = False, thresholdDAD = 50):
         """
         Compute the APD at (percent) % of a given series using the threshold_crossings fct
         given the times and the series. For instance, for percent = 90.0 the APD_90 values are computed.
@@ -448,6 +449,9 @@ class Analysis:
         - times
         - series
         - percent (default is 50%)
+        - start/end _time: starting and ending point for APD computation
+        - forceNoDAD: if DAD present, drop APDs < thresholdDAD ms
+        - thresholdDAD: threshold where to drop DADs
         
         Returns
         ----------
@@ -477,7 +481,11 @@ class Analysis:
                 import warnings
                 warnings.warn("The time series might be discontinous.\nFound downstroke with no preceeding upstroke. \t This function might be unsuited for the APD computation")                
                 down = down[:-1]
-        return (times[down] - times[up])
+        apd = times[down] - times[up]
+        if forceNoDAD:
+            print("Dropping APDs lower than {} ms".format(thresholdDAD))
+            apd = apd[apd > thresholdDAD]
+        return apd
 
 # ----------------------------------------------------------------------------------------------
 
