@@ -739,7 +739,7 @@ class Analysis:
         return times_maxima, peaks_maxima
 
     def computeBiomarkers(self, sim_dirs, params_vari, start_time, end_time,
-                          sampling_dir = "sampling"):
+                          sampling_dir = "sampling", dropShortAPD=False):
         """Computes several Biomarkers 
         (max_Vm, rest_Vm, max_dVdt, dome_Vm,
         mean and std of: APD50, APD90, Ca_peaks, Ca_dia,
@@ -748,12 +748,16 @@ class Analysis:
         given a list of parameters params_vari, a list of simulation
         folders and starting and ending times and a sampling dir name
         
+        if dropShortAPD True, then all APDs < 50 are dropped, if numerical value,
+        then APDs < dropShortAPD are dropped.
+        
         Args:
         - sim_dirs: list of simulation directories (usually from sampling)
         - params_vari: list of parameters to be plotted against
         - start_time
         - end_time
         - sampling_dir
+        - dropShortAPD: default is False, can be true or a ms numerical value
         
         Returns:
         - sim_data_df: pandas DF
@@ -792,12 +796,22 @@ class Analysis:
                 sim_data_df.at[counter,'dome_Vm'] = Vm_domes.mean()
             else:
                 print("No dome found!")
-    
-            APD50 = self.APD(list(vari['time']),list(vari['Vm']),percent=50,start_time=start_time,end_time=end_time)
+
+            # compute APDs according to dropping or not of the short APDs
+            if not dropShortAPD:
+                APD50 = self.APD(list(vari['time']),list(vari['Vm']),percent=50,start_time=start_time,end_time=end_time, forceNoDAD=False)
+                APD90 = self.APD(list(vari['time']),list(vari['Vm']),percent=90,start_time=start_time,end_time=end_time, forceNoDAD=False)
+                
+            elif dropShortAPD == True:
+                APD50 = self.APD(list(vari['time']),list(vari['Vm']),percent=50,start_time=start_time,end_time=end_time, forceNoDAD=True)
+                APD90 = self.APD(list(vari['time']),list(vari['Vm']),percent=90,start_time=start_time,end_time=end_time, forceNoDAD=True)
+            elif type(dropShortAPD) == int or type(dropShortAPD) == float:
+                APD50 = self.APD(list(vari['time']),list(vari['Vm']),percent=50,start_time=start_time,end_time=end_time, forceNoDAD=True, thresholdDAD=dropShortAPD)
+                APD90 = self.APD(list(vari['time']),list(vari['Vm']),percent=90,start_time=start_time,end_time=end_time, forceNoDAD=True, thresholdDAD=dropShortAPD)
+            
             sim_data_df.at[counter,'APD50_mean'] = APD50.mean()
             sim_data_df.at[counter,'APD50_std'] = APD50.std()
-    
-            APD90 = self.APD(list(vari['time']),list(vari['Vm']),percent=90,start_time=start_time,end_time=end_time)
+            
             sim_data_df.at[counter,'APD90_mean'] = APD90.mean()
             sim_data_df.at[counter,'APD90_std'] = APD90.std()
     
