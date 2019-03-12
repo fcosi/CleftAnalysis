@@ -44,7 +44,8 @@ class extract:
         self.folderDefinition()
         self.printInfo()
         self.param = self.getParam()
-        self.crunumber =  int(self.param["z_discs"][0]*self.param["crus_per_sec_line"][0]**2 - 4)
+        self.crunumber =  int(self.param["z_discs"][0]*self.param["crus_per_sec_line"][0]**2 -
+                              4*self.param["z_discs"][0])
 
     def read(self):
         var = pd.read_csv(self.folder + self.values, delim_whitespace = True)
