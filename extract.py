@@ -102,10 +102,15 @@ class extract:
         get dataframe of parameters from parameter file of cleftdyn (use var names as keys)
         '''
         final_param = pd.DataFrame()
+        final_param["params"] = [0]
         param = pd.read_csv(self.folder + "parameters.txt", sep="=", index_col=0).T
-        for val in param:
+        for val in param:            
             try:
-                final_param[val] = [float(param[val][0])]
+                final_param[val] = [float(param[val])]
+            except TypeError:
+                # here some error occurs, to be checked/fixed!
+                # print(val)
+                pass
             except ValueError:
                 pass
             except KeyError:
