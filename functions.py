@@ -738,6 +738,65 @@ class Analysis:
             warnings.warn("The time series might be discontinous.\nFound more than peak in a small time intervall. \t Please increase the smoothing factor!")                
         return times_maxima, peaks_maxima
 
+    def computeSparkBiomarkers(self, sim_dirs, params_vari, start_time, end_time,
+                               sampling_dir = "sampling"):
+        """Computes several Biomarkers for the Spark simulations
+        (max_Vm, rest_Vm, max_dVdt, dome_Vm,
+        mean and std of: APD50, APD90, Ca_peaks, Ca_dia,
+        Ca_time_to_peak) 
+        
+        given a list of parameters params_vari, a list of simulation
+        folders and starting and ending times and a sampling dir name
+        
+        if dropShortAPD True, then all APDs < 50 are dropped, if numerical value,
+        then APDs < dropShortAPD are dropped.
+        
+        Args:
+        - sim_dirs: list of simulation directories (usually from sampling)
+        - params_vari: list of parameters to be plotted against
+        - start_time
+        - end_time
+        - sampling_dir
+        
+        Returns:
+        - spark_data_df: pandas DF
+        """
+        from . import extract
+        data = np.zeros((0,len(params_vari)))
+        spark_data_df = pd.DataFrame(data=data, index=[], columns=params_vari)
+        
+        for sim_dir in sim_dirs:
+            
+            f = extract.extract(sim_dir,sampling_dir)
+            vari = f.readIonic()
+            varm = f.readMass()
+            para = f.getParameters()
+            
+            if (max(vari['time']) < end_time):
+                import warnings
+                warnings.warn("SimNr {} ends at {}, while end_time is {}. Skip!".
+                              format(sim_dir, max(vari['time']), end_time)) 
+                continue
+            
+            counter = len(spark_data_df) + 1
+            spark_data_df.at[counter,'sim'] = sim_dir
+            for param in para:
+                if param in params_vari:
+                    spark_data_df.at[counter,param] = float(para.iloc[0][param])
+            
+            channels = f.crusInfo()
+            spark_data_df.at[counter,'RyRtot'] = sum(channels[0])
+            spark_data_df.at[counter,'LCCtot'] = sum(channels[1])
+            
+            
+            spark_data_df.at[counter, 'folder'] = "../{}/{}/".format(sampling_dir, sim_dir)
+        
+        
+        return spark_data_df
+
+
+
+
     def computeBiomarkers(self, sim_dirs, params_vari, start_time, end_time,
                           sampling_dir = "sampling", dropShortAPD=False):
         """Computes several Biomarkers 
