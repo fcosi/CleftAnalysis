@@ -302,7 +302,7 @@ class extract:
             print(savepath)
             os.system('pdfunite {} {}clefts/cleftall.pdf'.format(savepath, self.folder))
 
-    def getOpenChannels(self):
+    def getOpenChannels(self, saveInfo=False):
         '''
         get time, open RyR and open LCC from file in clefts/
         if not existing create it
@@ -317,6 +317,13 @@ class extract:
         
         df = pd.read_csv(outputname, sep=" ")
         df = df.rename(index=str, columns={"Unnamed: 0": "counter0", "Unnamed: 1": "counter1"})
+        if saveInfo:
+            outputname = self.folder + "clefts/channelInfo.txt"
+            outfile = open(outputname, 'w')
+            outfile.write("open RyR / ms: {}\navg. RyR / CRU: {}\n".
+                          format(sum(df["openRyR"])/max(df["time"]), df["totalRyR"].mean()))
+            outfile.close()
+        
         return df
 
     def saveOpenChannels(self, overwrite = False):
@@ -327,7 +334,7 @@ class extract:
         (2018/10/13)
         where cleft.log output has been changed (num of open channels outputted)
         '''
-
+        print("Warning: this might take a while")
         outputname = self.folder + "clefts/openChannels.csv"
         if os.path.isfile(outputname) and not overwrite:
             import warnings
@@ -450,7 +457,7 @@ class extract:
     def get_openCRUs(self, year=2018):
         """
         Gets the number of open crus from the outputfile (year is the starting name of the file)
-        also gets the according times
+        also gets the according times (works with output that is in simfolder and has the date)
         
         Output:
         - list of time steps
