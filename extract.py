@@ -241,7 +241,7 @@ class extract:
         
         gets x y pairs from first line of the cleft logs
         
-        returns np 2d array
+        returns np 2d array of RyR and LCC locations in cleft
         '''
         loc_index = cru_info_list.index("Location")
         cru_info_list = cru_info_list[loc_index + 1:]
@@ -302,7 +302,27 @@ class extract:
             print(savepath)
             os.system('pdfunite {} {}clefts/cleftall.pdf'.format(savepath, self.folder))
 
-    def getOpenChannels(self, saveInfo=False):
+    def processChannelInfo(self):
+        '''
+        function that processes and saves Informations of all channels of a sim into a csv file
+        
+        Return:
+        chInfo_df: pandas DF
+        '''
+        
+        df = self.getOpenChannels()
+        
+        ryrpertime = sum(df["openRyR"])/max(df["time"])
+        chInfo_df = pd.DataFrame()
+        chInfo_df["openRyR_per_ms"] = [ryrpertime]
+        
+        # saving information to file
+        outputname = self.folder + "clefts/channelInfo.csv"
+        chInfo_df.to_csv(outputname, index=False)
+        
+        return chInfo_df
+
+    def getOpenChannels(self):
         '''
         get time, open RyR and open LCC from file in clefts/
         if not existing create it
@@ -317,12 +337,6 @@ class extract:
         
         df = pd.read_csv(outputname, sep=" ")
         df = df.rename(index=str, columns={"Unnamed: 0": "counter0", "Unnamed: 1": "counter1"})
-        if saveInfo:
-            outputname = self.folder + "clefts/channelInfo.txt"
-            outfile = open(outputname, 'w')
-            outfile.write("open RyR / ms: {}\navg. RyR / CRU: {}\n".
-                          format(sum(df["openRyR"])/max(df["time"]), df["totalRyR"].mean()))
-            outfile.close()
         
         return df
 
@@ -334,7 +348,7 @@ class extract:
         (2018/10/13)
         where cleft.log output has been changed (num of open channels outputted)
         '''
-        print("Warning: this might take a while")
+        print("Warning: saving open channels, this might take a while")
         outputname = self.folder + "clefts/openChannels.csv"
         if os.path.isfile(outputname) and not overwrite:
             import warnings

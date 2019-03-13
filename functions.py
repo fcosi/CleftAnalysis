@@ -788,6 +788,10 @@ class Analysis:
             spark_data_df.at[counter,'RyRtot'] = sum(channels[0])
             spark_data_df.at[counter,'LCCtot'] = sum(channels[1])
             
+            # for later, when processChannelInfo is done add an if condition to check
+            # if channelInfo.csv exists in clefts directory to speed up the loading!
+            chInfo_df = f.processChannelInfo()["openRyR_per_ms"]
+            spark_data_df.at[counter, "openRyR_per_ms"] = float(chInfo_df)
             
             spark_data_df.at[counter, 'folder'] = "../{}/{}/".format(sampling_dir, sim_dir)
         
