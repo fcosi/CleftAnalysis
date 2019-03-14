@@ -149,8 +149,8 @@ class extract:
                 pass
         return sim_dirs
 
-    def crusInfo(self, getRadius = False, getLocations = False):
-        '''get total number of RyR and LCCs. Optional radius and channel locations
+    def crusInfo(self, getRadius = False, getLocations = False, getCRULcation = False):
+        '''get total number of RyR and LCCs. Optional radius, channel locations and CRU location
         
         output are lists of the two channel types optional if
         variables set to True also output CRU radius and channel
@@ -302,7 +302,7 @@ class extract:
             print(savepath)
             os.system('pdfunite {} {}clefts/cleftall.pdf'.format(savepath, self.folder))
 
-    def processChannelInfo(self):
+    def processCRUInfo(self):
         '''
         function that processes and saves Informations of all channels of a sim into a csv file
         
@@ -360,27 +360,30 @@ class extract:
             timesteps = []
             openRyR = []
             openLCC = []
+            caBulk = []
             cleftname = "cleft" + str(i)
             # get all lines from cleftlogs
-            lines, totalRyR, totalLCC = self.__getCleftLogLines(i)
+            lines, totalRyR, totalLCC, cruloc = self.__getCleftLogLines(i, getCRULocation=True)
+            x, y, z = cruloc[0][0], cruloc[0][1], cruloc[0][2]
+            #print(lines, totalRyR, totalLCC, cruloc)
             # dirty hack: list starts from 1 since the first time step with time=0 (no dot for float) is not covered by regular expression (CHANGE THIS!)
             for line in lines[1:]:
                 nums = re.findall("\d+\.\d+", line)
                 timesteps.append(nums[0])
+                caBulk.append(nums[1])
                 nums = re.findall("\d+", line)
                 openRyR.append(int(nums[-2]))
                 openLCC.append(int(nums[-1]))
             
-            # create pandas dataframe to save file to csv
-            outDF = pd.DataFrame({'clefts': cleftname,'time': timesteps, 'openRyR': openRyR,
-                                  'openLCC': openLCC, 'totalRyR': totalRyR, 'totalLCC': totalLCC})
-            #dict[cleftname] = outDF
+            # create pandas dataframe to save file to csv 
+            outDF = pd.DataFrame({'clefts': cleftname, 'xcru': x, 'ycru': y, 'zcru': z, 'time': timesteps, 'bulkCa': caBulk, 'openRyR': openRyR, 'openLCC': openLCC, 'totalRyR': totalRyR, 'totalLCC': totalLCC})
+            
             del(timesteps[:], openRyR[:], openRyR[:])
             totDF = pd.concat([totDF, outDF])
         totDF["ratioRyR"] = totDF["openRyR"]/totDF["totalRyR"]
         totDF["ratioLCC"] = totDF["openLCC"]/totDF["totalLCC"]
         outfile = open(outputname, 'a')
-        totDF.to_csv(outfile, header=True, sep=" ")
+        totDF.to_csv(outfile, header=True, sep=" ", index=False)
         outfile.close()
 
     def __getChannelInformations(self, which="conc", cleftnr=0):
@@ -443,7 +446,7 @@ class extract:
         
         return times, ryr_flux, lcc_flux
 
-    def __getCleftLogLines(self, crunum):
+    def __getCleftLogLines(self, crunum, getCRULocation = False):
         """
         private fct returning the lines of the cleftlogs and the total number of RyR LCCs
         without the first line
@@ -452,10 +455,15 @@ class extract:
         crufile = open(self.folder + "clefts/cleft" + str(crunum) + ".log")
         lines = [line.rstrip('\n') for line in crufile]
         crufile.close()
-        totalRyR = int(lines[0].split(" ")[0])
-        totalLCC = int(lines[0].split(" ")[2])        
+        firstline = lines[0].split(" ")
+        totalRyR = int(firstline[0])
+        totalLCC = int(firstline[2])
+        locationCRU = [[float(firstline[6]), float(firstline[7]), float(firstline[8])]]
         del(lines[0])
-        return lines, totalRyR, totalLCC
+        if getCRULocation:
+            return lines, totalRyR, totalLCC, locationCRU
+        else:
+            return lines, totalRyR, totalLCC
     
     def determineValues(self):
         if ((self.values == "ionic") or (self.values == "ionicmodel") or
