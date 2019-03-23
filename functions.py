@@ -1568,13 +1568,13 @@ class Analysis:
         
         Parameters
         ----------
-        - simfolder
         - sim parent folder
         - first variable to be plotted (default: Ca_i)
         - second variable to be plotted (default: Vm)
         - third variable to be plotted (default: I_LCC)
         
         Returns
+        - simfolder
         ----------
         Plot        
         '''
@@ -1598,4 +1598,4 @@ class Analysis:
         fig1.set_tight_layout(True)
         
         fig1.show()
-        
+        #fig1.saveplot("figures-remote/three_plots{}".format(simnum))
