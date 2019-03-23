@@ -387,7 +387,7 @@ class SparkAnalysis:
         
         Returns:
         quarks, sparks: int of number of quarks/sparks in simulation and cell
-        celftn. : optional return: total cleft number
+        celftn. : optional return: opening cleft number
         """
         oneRyR = channelDF[channelDF.openRyR > 0]
         moreRyR = oneRyR[oneRyR.openRyR > 1]
