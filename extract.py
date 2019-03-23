@@ -310,7 +310,7 @@ class extract:
         chInfo_df: pandas DF
         '''
         
-        df = self.getOpenChannels()
+        df = self.getCleftChannelInformation()
         
         ryrpertime = sum(df["openRyR"])/max(df["time"])
         chInfo_df = pd.DataFrame()

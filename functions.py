@@ -25,7 +25,7 @@ class SparkAnalysis:
     store analysis functions for the spark analysis
     """
     
-    def __init__(self, folder):
+    def __init__(self):
         pass
         #self.folder = folder
         #self.processes = self.get_used_processes()
@@ -220,7 +220,16 @@ class SparkAnalysis:
         spark_candidates_endTimes.append(time) 
         return spark_candidates_startTimes, spark_candidates_endTimes
 
-# ----------------------------------------------------------------------------------------------
+    def mem_usage(self, pandas_obj):
+        '''
+        return mem_usage given a pandas object
+        '''
+        if isinstance(pandas_obj,pd.DataFrame):
+            usage_b = pandas_obj.memory_usage(deep=True).sum()
+        else: # we assume if not a df it's a series
+            usage_b = pandas_obj.memory_usage(deep=True)
+            usage_mb = usage_b / 1024 ** 2 # convert bytes to megabytes
+        return usage_mb #"{:03.2f} MB".format(usage_mb)
 
     def printFD_FDHW(self, duration = 1):
         spark_no = 0
@@ -339,30 +348,126 @@ class SparkAnalysis:
         for cru_id in cru_info['cru_id'].unique():
             
             label = labels[counter]
-    
+            
             cru_df = cru_info[cru_info['cru_id'] == cru_id]
-     
+            
             cru_dfX = cru_df[cru_df["cyto_ca2+"] > (float(percent)/100.0)*quantity_max[label]]
             timeX = cru_dfX['time'].max() - cru_dfX['time'].min()
-    
+            
             if spark_times[label] < timeX:
                 spark_times[label] = timeX
                 
         return spark_times
 
-# ----------------------------------------------------------------------------------------------
+    def __eventSQcounter(self, dataframe, eventduration = 20):
+        """ prvt fct
+        returns the counter for events happened during opening times of eventduration
+        from dataframes that are given from the cleftlogs
+        
+        Returns:
+        counter: int of number of events (Quarks or Sparks)
+        """
+        counter = 0
+        # go through the clefts
+        for cleft in dataframe.clefts.drop_duplicates():
+            firsttime = min(dataframe[dataframe.clefts == cleft].time)
+            counter += 1
+            # check for each time step if it is within eventduration
+            for times in dataframe[dataframe.clefts == cleft].time:
+                if (times < firsttime + eventduration):
+                    firsttime = times
+                else:
+                    firsttime = times
+                    counter += 1
+        return counter
 
-    def mem_usage(self, pandas_obj):
-        '''
-        return mem_usage given a pandas object
-        '''
-        if isinstance(pandas_obj,pd.DataFrame):
-            usage_b = pandas_obj.memory_usage(deep=True).sum()
-        else: # we assume if not a df it's a series
-            usage_b = pandas_obj.memory_usage(deep=True)
-            usage_mb = usage_b / 1024 ** 2 # convert bytes to megabytes
-        return usage_mb #"{:03.2f} MB".format(usage_mb)
+    def getQuarkSparkCount(self, channelDF, eventduration = 20, getCleftnumber = False):
+        """
+        gets Quarks and Sparks given cleftlog DataFrame and optional duration of events
+        
+        Returns:
+        quarks, sparks: int of number of quarks/sparks in simulation and cell
+        celftn. : optional return: total cleft number
+        """
+        oneRyR = channelDF[channelDF.openRyR > 0]
+        moreRyR = oneRyR[oneRyR.openRyR > 1]
+        
+        allev = self.__eventSQcounter(oneRyR, eventduration=eventduration)
+        sparks = self.__eventSQcounter(moreRyR, eventduration=eventduration)
+        quarks = allev - sparks
+        
+        if getCleftnumber:
+            return quarks, sparks, len(oneRyR.clefts.drop_duplicates())
+        else:
+            return quarks, sparks                
 
+    def computeSparkBiomarkers(self, sim_dirs, params_vari, start_time, end_time,
+                               sampling_dir = "sampling"):
+        """Computes several Biomarkers for the Spark simulations
+        (max_Vm, rest_Vm, max_dVdt, dome_Vm,
+        mean and std of: APD50, APD90, Ca_peaks, Ca_dia,
+        Ca_time_to_peak) 
+        
+        given a list of parameters params_vari, a list of simulation
+        folders and starting and ending times and a sampling dir name
+        
+        if dropShortAPD True, then all APDs < 50 are dropped, if numerical value,
+        then APDs < dropShortAPD are dropped.
+        
+        Args:
+        - sim_dirs: list of simulation directories (usually from sampling)
+        - params_vari: list of parameters to be plotted against
+        - start_time
+        - end_time
+        - sampling_dir
+        
+        Returns:
+        - spark_data_df: pandas DF
+        """
+        from . import extract
+        data = np.zeros((0,len(params_vari)))
+        spark_data_df = pd.DataFrame(data=data, index=[], columns=params_vari)
+        
+        for sim_dir in sim_dirs:
+            
+            f = extract.extract(sim_dir,sampling_dir)
+            vari = f.readIonic()
+            varm = f.readMass()
+            para = f.getParameters()
+            channelDF = f.getCleftChannelInformation()
+            
+            if (max(vari['time']) < end_time):
+                import warnings
+                warnings.warn("SimNr {} ends at {}, while end_time is {}. Skip!".
+                              format(sim_dir, max(vari['time']), end_time)) 
+                continue
+            
+            counter = len(spark_data_df) + 1
+            spark_data_df.at[counter,'sim'] = sim_dir
+            for param in para:
+                if param in params_vari:
+                    spark_data_df.at[counter,param] = float(para.iloc[0][param])
+            
+            channels = f.crusInfo()
+            spark_data_df.at[counter,'RyRtot'] = sum(channels[0])
+            spark_data_df.at[counter,'LCCtot'] = sum(channels[1])
+            
+            # get sparks and quarks counts
+            quarks, sparks = self.getQuarkSparkCount(channelDF, eventduration=20)
+            spark_data_df.at[counter, 'quarks'] = int(quarks)
+            spark_data_df.at[counter, 'sparks'] = int(sparks)
+            
+            # for later, when processChannelInfo is done add an if condition to check
+            # if channelInfo.csv exists in clefts directory to speed up the loading!
+            chInfo_df = f.processCRUInfo()["openRyR_per_ms"]
+            spark_data_df.at[counter, "openRyR_per_ms"] = float(chInfo_df)
+            
+            spark_data_df.at[counter, 'folder'] = "../{}/{}/".format(sampling_dir, sim_dir)
+        
+        
+        return spark_data_df
+
+    
 # ----------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------
@@ -737,68 +842,6 @@ class Analysis:
             import warnings
             warnings.warn("The time series might be discontinous.\nFound more than peak in a small time intervall. \t Please increase the smoothing factor!")                
         return times_maxima, peaks_maxima
-
-    def computeSparkBiomarkers(self, sim_dirs, params_vari, start_time, end_time,
-                               sampling_dir = "sampling"):
-        """Computes several Biomarkers for the Spark simulations
-        (max_Vm, rest_Vm, max_dVdt, dome_Vm,
-        mean and std of: APD50, APD90, Ca_peaks, Ca_dia,
-        Ca_time_to_peak) 
-        
-        given a list of parameters params_vari, a list of simulation
-        folders and starting and ending times and a sampling dir name
-        
-        if dropShortAPD True, then all APDs < 50 are dropped, if numerical value,
-        then APDs < dropShortAPD are dropped.
-        
-        Args:
-        - sim_dirs: list of simulation directories (usually from sampling)
-        - params_vari: list of parameters to be plotted against
-        - start_time
-        - end_time
-        - sampling_dir
-        
-        Returns:
-        - spark_data_df: pandas DF
-        """
-        from . import extract
-        data = np.zeros((0,len(params_vari)))
-        spark_data_df = pd.DataFrame(data=data, index=[], columns=params_vari)
-        
-        for sim_dir in sim_dirs:
-            
-            f = extract.extract(sim_dir,sampling_dir)
-            vari = f.readIonic()
-            varm = f.readMass()
-            para = f.getParameters()
-            
-            if (max(vari['time']) < end_time):
-                import warnings
-                warnings.warn("SimNr {} ends at {}, while end_time is {}. Skip!".
-                              format(sim_dir, max(vari['time']), end_time)) 
-                continue
-            
-            counter = len(spark_data_df) + 1
-            spark_data_df.at[counter,'sim'] = sim_dir
-            for param in para:
-                if param in params_vari:
-                    spark_data_df.at[counter,param] = float(para.iloc[0][param])
-            
-            channels = f.crusInfo()
-            spark_data_df.at[counter,'RyRtot'] = sum(channels[0])
-            spark_data_df.at[counter,'LCCtot'] = sum(channels[1])
-            
-            # for later, when processChannelInfo is done add an if condition to check
-            # if channelInfo.csv exists in clefts directory to speed up the loading!
-            chInfo_df = f.processCRUInfo()["openRyR_per_ms"]
-            spark_data_df.at[counter, "openRyR_per_ms"] = float(chInfo_df)
-            
-            spark_data_df.at[counter, 'folder'] = "../{}/{}/".format(sampling_dir, sim_dir)
-        
-        
-        return spark_data_df
-
-
 
 
     def computeBiomarkers(self, sim_dirs, params_vari, start_time, end_time,
