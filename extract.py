@@ -44,7 +44,8 @@ class extract:
         self.folderDefinition()
         self.printInfo()
         self.param = self.getParam()
-        self.crunumber =  int(self.param["z_discs"][0]*self.param["crus_per_sec_line"][0]**2 - 4)
+        self.crunumber =  int(self.param["z_discs"][0]*self.param["crus_per_sec_line"][0]**2 -
+                              4*self.param["z_discs"][0])
 
     def read(self):
         var = pd.read_csv(self.folder + self.values, delim_whitespace = True)
@@ -102,10 +103,15 @@ class extract:
         get dataframe of parameters from parameter file of cleftdyn (use var names as keys)
         '''
         final_param = pd.DataFrame()
+        final_param["params"] = [0]
         param = pd.read_csv(self.folder + "parameters.txt", sep="=", index_col=0).T
-        for val in param:
+        for val in param:            
             try:
-                final_param[val] = [float(param[val][0])]
+                final_param[val] = [float(param[val])]
+            except TypeError:
+                # here some error occurs, to be checked/fixed!
+                # print(val)
+                pass
             except ValueError:
                 pass
             except KeyError:
@@ -143,8 +149,8 @@ class extract:
                 pass
         return sim_dirs
 
-    def crusInfo(self, getRadius = False, getLocations = False):
-        '''get total number of RyR and LCCs. Optional radius and channel locations
+    def crusInfo(self, getRadius = False, getLocations = False, getCRULcation = False):
+        '''get total number of RyR and LCCs. Optional radius, channel locations and CRU location
         
         output are lists of the two channel types optional if
         variables set to True also output CRU radius and channel
@@ -235,7 +241,7 @@ class extract:
         
         gets x y pairs from first line of the cleft logs
         
-        returns np 2d array
+        returns np 2d array of RyR and LCC locations in cleft
         '''
         loc_index = cru_info_list.index("Location")
         cru_info_list = cru_info_list[loc_index + 1:]
@@ -296,6 +302,26 @@ class extract:
             print(savepath)
             os.system('pdfunite {} {}clefts/cleftall.pdf'.format(savepath, self.folder))
 
+    def processCRUInfo(self):
+        '''
+        function that processes and saves Informations of all channels of a sim into a csv file
+        
+        Return:
+        chInfo_df: pandas DF
+        '''
+        
+        df = self.getOpenChannels()
+        
+        ryrpertime = sum(df["openRyR"])/max(df["time"])
+        chInfo_df = pd.DataFrame()
+        chInfo_df["openRyR_per_ms"] = [ryrpertime]
+        
+        # saving information to file
+        outputname = self.folder + "clefts/channelInfo.csv"
+        chInfo_df.to_csv(outputname, index=False)
+        
+        return chInfo_df
+
     def getOpenChannels(self):
         '''
         get time, open RyR and open LCC from file in clefts/
@@ -311,6 +337,7 @@ class extract:
         
         df = pd.read_csv(outputname, sep=" ")
         df = df.rename(index=str, columns={"Unnamed: 0": "counter0", "Unnamed: 1": "counter1"})
+        
         return df
 
     def saveOpenChannels(self, overwrite = False):
@@ -321,7 +348,7 @@ class extract:
         (2018/10/13)
         where cleft.log output has been changed (num of open channels outputted)
         '''
-
+        print("Warning: saving open channels, this might take a while")
         outputname = self.folder + "clefts/openChannels.csv"
         if os.path.isfile(outputname) and not overwrite:
             import warnings
@@ -333,27 +360,30 @@ class extract:
             timesteps = []
             openRyR = []
             openLCC = []
+            caBulk = []
             cleftname = "cleft" + str(i)
             # get all lines from cleftlogs
-            lines, totalRyR, totalLCC = self.__getCleftLogLines(i)
+            lines, totalRyR, totalLCC, cruloc = self.__getCleftLogLines(i, getCRULocation=True)
+            x, y, z = cruloc[0][0], cruloc[0][1], cruloc[0][2]
+            #print(lines, totalRyR, totalLCC, cruloc)
             # dirty hack: list starts from 1 since the first time step with time=0 (no dot for float) is not covered by regular expression (CHANGE THIS!)
             for line in lines[1:]:
                 nums = re.findall("\d+\.\d+", line)
                 timesteps.append(nums[0])
+                caBulk.append(nums[1])
                 nums = re.findall("\d+", line)
                 openRyR.append(int(nums[-2]))
                 openLCC.append(int(nums[-1]))
             
-            # create pandas dataframe to save file to csv
-            outDF = pd.DataFrame({'clefts': cleftname,'time': timesteps, 'openRyR': openRyR,
-                                  'openLCC': openLCC, 'totalRyR': totalRyR, 'totalLCC': totalLCC})
-            #dict[cleftname] = outDF
+            # create pandas dataframe to save file to csv 
+            outDF = pd.DataFrame({'clefts': cleftname, 'xcru': x, 'ycru': y, 'zcru': z, 'time': timesteps, 'bulkCa': caBulk, 'openRyR': openRyR, 'openLCC': openLCC, 'totalRyR': totalRyR, 'totalLCC': totalLCC})
+            
             del(timesteps[:], openRyR[:], openRyR[:])
             totDF = pd.concat([totDF, outDF])
         totDF["ratioRyR"] = totDF["openRyR"]/totDF["totalRyR"]
         totDF["ratioLCC"] = totDF["openLCC"]/totDF["totalLCC"]
         outfile = open(outputname, 'a')
-        totDF.to_csv(outfile, header=True, sep=" ")
+        totDF.to_csv(outfile, header=True, sep=" ", index=False)
         outfile.close()
 
     def __getChannelInformations(self, which="conc", cleftnr=0):
@@ -416,7 +446,7 @@ class extract:
         
         return times, ryr_flux, lcc_flux
 
-    def __getCleftLogLines(self, crunum):
+    def __getCleftLogLines(self, crunum, getCRULocation = False):
         """
         private fct returning the lines of the cleftlogs and the total number of RyR LCCs
         without the first line
@@ -425,10 +455,15 @@ class extract:
         crufile = open(self.folder + "clefts/cleft" + str(crunum) + ".log")
         lines = [line.rstrip('\n') for line in crufile]
         crufile.close()
-        totalRyR = int(lines[0].split(" ")[0])
-        totalLCC = int(lines[0].split(" ")[2])        
+        firstline = lines[0].split(" ")
+        totalRyR = int(firstline[0])
+        totalLCC = int(firstline[2])
+        locationCRU = [[float(firstline[6]), float(firstline[7]), float(firstline[8])]]
         del(lines[0])
-        return lines, totalRyR, totalLCC
+        if getCRULocation:
+            return lines, totalRyR, totalLCC, locationCRU
+        else:
+            return lines, totalRyR, totalLCC
     
     def determineValues(self):
         if ((self.values == "ionic") or (self.values == "ionicmodel") or
@@ -444,7 +479,7 @@ class extract:
     def get_openCRUs(self, year=2018):
         """
         Gets the number of open crus from the outputfile (year is the starting name of the file)
-        also gets the according times
+        also gets the according times (works with output that is in simfolder and has the date)
         
         Output:
         - list of time steps
