@@ -322,14 +322,15 @@ class extract:
         
         return chInfo_df
 
-    def getOpenChannels(self):
+    def getCleftChannelInformation(self):
         '''
-        get time, open RyR and open LCC from file in clefts/
+        get time, open RyR, open LCC, cleft Location and total channel numbers 
+        from file in clefts/
         if not existing create it
         
         - Return:
         pandas DataFrame
-        '''
+        '''        
         
         outputname = self.folder + "clefts/openChannels.csv"
         if (not os.path.exists(outputname)):
@@ -340,6 +341,13 @@ class extract:
         
         return df
 
+    def getOpenChannels(self):
+        """
+        same fct as getCleftChannelInformation
+        renaming of fct meaningfull
+        """
+        return self.getCleftChannelInformation()
+
     def saveOpenChannels(self, overwrite = False):
         '''
         save time steps, number of open RyR and LCC to file in clefts/ dir
@@ -348,7 +356,7 @@ class extract:
         (2018/10/13)
         where cleft.log output has been changed (num of open channels outputted)
         '''
-        print("Warning: saving open channels, this might take a while")
+        print("Warning: saving open channels, this might take a while..")
         outputname = self.folder + "clefts/openChannels.csv"
         if os.path.isfile(outputname) and not overwrite:
             import warnings
