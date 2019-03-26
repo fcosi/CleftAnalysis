@@ -1668,6 +1668,49 @@ class Analysis:
             res = pd.concat([res, df[df["clefts"] == cleft]])
         return res
 
+    def plotBiomarkerGrid(self, dataset, params, objectives, saveFig = False):
+        """
+        plot matrix with biomarkers given dataset with biomarkers, parameters and objectives
+        
+        Parameters
+        ----------
+        dataset: DF with biomarkers
+        params: list of parameters vs which to plot
+        objectives: y-values of plotting matrix
+        saveFig: (optional) path where to save plot        
+        """
+        
+        depth = len(objectives)
+        width = len(params)
+        
+        colors = ['red','darkorange', 'gold','royalblue','seagreen', 'black', 'purple']
+        plt.rcParams.update({'font.size': 12})
+        plt.rcParams.update({'xtick.labelsize': 12})
+        plt.rcParams.update({'ytick.labelsize': 12})
+        plt.rcParams.update({'axes.labelsize': 12})
+        
+        fig, axarr = plt.subplots(depth, width, sharey='row', figsize=(3.5*width, 3*depth))
+        
+        for ind, par in enumerate(params):
+            for jnd, obj in enumerate(objectives):
+                a = min(dataset[par])
+                b = max(dataset[par])
+                axarr[jnd,ind].set_xlim((a,b))
+                axarr[jnd,ind].locator_params(nbins=5, axis='x')
+                axarr[jnd,ind].scatter(dataset[par], dataset[obj], 
+                                       marker='o',color=colors[ind],s=100)
+                axarr[jnd,ind].set_xlabel(par)
+                axarr[jnd,ind].set_ylabel(obj)        
+                
+        fig.tight_layout()
+        if saveFig == True:
+            print("Attention: no saving path specified, saving into cwd")
+            fig.savefig("./biomarkers_{}_vs_{}.pdf".format(objectives, params))
+        elif type(saveFig) == str:
+            fig.savefig(saveFig)
+        else:
+            fig.show()
+
     def fastOneSimPlot(self, simnum, simfolder, first = "Ca_i", second = "Vm", third = "I_LCC"):
         '''
         Plots three whole time series given the simulation folder and parent folder
@@ -1677,12 +1720,7 @@ class Analysis:
         - sim parent folder
         - first variable to be plotted (default: Ca_i)
         - second variable to be plotted (default: Vm)
-        - third variable to be plotted (default: I_LCC)
-        
-        Returns
-        - simfolder
-        ----------
-        Plot        
+        - third variable to be plotted (default: I_LCC)  
         '''
         
         fig1, axs = plt.subplots(3, sharex = True, figsize = (20, 11))
