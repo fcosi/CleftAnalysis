@@ -359,31 +359,44 @@ class SparkAnalysis:
                 
         return spark_times
 
-    def __eventSQcounter(self, dataframe, eventduration = 20):
+    def __eventSQcounter(self, dataframe, eventduration = 20, getTimeIntervals = False):
         """ prvt fct
         returns the counter for events happened during opening times of eventduration
         from dataframes that are given from the cleftlogs
+        if getTimeIntervals is true also write out time intervals and cleftnames to list
         
         Returns:
         counter: int of number of events (Quarks or Sparks)
         """
         counter = 0
+        timeintervals = []
         # go through the clefts
         for cleft in dataframe.clefts.drop_duplicates():
-            firsttime = min(dataframe[dataframe.clefts == cleft].time)
+            movingtime = min(dataframe[dataframe.clefts == cleft].time)
+            begin = movingtime
             counter += 1
             # check for each time step if it is within eventduration
             for times in dataframe[dataframe.clefts == cleft].time:
-                if (times < firsttime + eventduration):
-                    firsttime = times
+                if (times < movingtime + eventduration):
+                    movingtime = times
+                    end = times
                 else:
-                    firsttime = times
+                    timeintervals.append((cleft, begin, end))
+                    begin = times
+                    movingtime = times
+                    end = times
                     counter += 1
-        return counter
+            timeintervals.append((cleft, begin, end))
+        
+        if getTimeIntervals:
+            return counter, timeintervals
+        else:
+            return counter
 
-    def getQuarkSparkCount(self, channelDF, eventduration = 20, getCleftnumber = False):
+    def getQuarkSparkInfo(self, channelDF, eventduration = 20, getCleftnumber = False):
         """
-        gets Quarks and Sparks given cleftlog DataFrame and optional duration of events
+        gets Quarks and Sparks given cleftlog DataFrame and optional number of clefts firing
+        also returns np.array of peak bulk Ca for each cleft
         
         Returns:
         quarks, sparks: int of number of quarks/sparks in simulation and cell
@@ -393,13 +406,23 @@ class SparkAnalysis:
         moreRyR = oneRyR[oneRyR.openRyR > 1]
         
         allev = self.__eventSQcounter(oneRyR, eventduration=eventduration)
-        sparks = self.__eventSQcounter(moreRyR, eventduration=eventduration)
+        sparks, timeinter = self.__eventSQcounter(moreRyR, eventduration=eventduration,
+                                       getTimeIntervals=True)
         quarks = allev - sparks
         
+        peaks = np.zeros(len(timeinter))
+        peak_times = np.zeros(len(timeinter))
+        
+        for ind, t in enumerate(timeinter):
+            peaks[ind] = max(moreRyR[(moreRyR.clefts == t[0]) & (moreRyR.time>=t[1]) &
+                                     (moreRyR.time<=t[2])].bulkCa)
+            peak_times[ind] = moreRyR.loc[(moreRyR[(moreRyR.clefts == t[0]) & (moreRyR.time>=t[1])
+                                                   & (moreRyR.time<=t[2])].bulkCa.idxmax())].time
+        
         if getCleftnumber:
-            return quarks, sparks, len(oneRyR.clefts.drop_duplicates())
+            return quarks, sparks, peaks, len(oneRyR.clefts.drop_duplicates())
         else:
-            return quarks, sparks                
+            return quarks, sparks, peaks        
 
     def computeSparkBiomarkers(self, sim_dirs, params_vari, start_time, end_time,
                                sampling_dir = "sampling"):
@@ -448,17 +471,23 @@ class SparkAnalysis:
                 if param in params_vari:
                     spark_data_df.at[counter,param] = float(para.iloc[0][param])
             
-            channels = f.crusInfo()
-            spark_data_df.at[counter,'RyRtot'] = sum(channels[0])
-            spark_data_df.at[counter,'LCCtot'] = sum(channels[1])
+            # may be not needed
+            # channels = f.crusInfo()
+            # spark_data_df.at[counter,'RyRtot'] = sum(channels[0])
+            # spark_data_df.at[counter,'LCCtot'] = sum(channels[1])
             
-            # get sparks and quarks counts
-            quarks, sparks = self.getQuarkSparkCount(channelDF, eventduration=20)
+            # get sparks, quarks counts and mean peak Calcium
+            quarks, sparks, peaks = self.getQuarkSparkInfo(channelDF, eventduration=20)
             spark_data_df.at[counter, 'quarks'] = int(quarks)
             spark_data_df.at[counter, 'sparks'] = int(sparks)
             
+            spark_data_df.at[counter, 'quarkspark_ratio'] = quarks/sparks
+            spark_data_df.at[counter, 'Ca_peak_mean'] = peaks.mean()
+            
+            
             # for later, when processChannelInfo is done add an if condition to check
             # if channelInfo.csv exists in clefts directory to speed up the loading!
+            # might not be needed
             chInfo_df = f.processCRUInfo()["openRyR_per_ms"]
             spark_data_df.at[counter, "openRyR_per_ms"] = float(chInfo_df)
             
