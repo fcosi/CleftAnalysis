@@ -400,6 +400,8 @@ class SparkAnalysis:
         
         Returns:
         quarks, sparks: int of number of quarks/sparks in simulation and cell
+        peak: array of peak Calcium
+        FDHM: np.array full duration at half maximum
         celftn. : optional return: opening cleft number
         """
         oneRyR = channelDF[channelDF.openRyR > 0]
@@ -413,16 +415,30 @@ class SparkAnalysis:
         peaks = np.zeros(len(timeinter))
         peak_times = np.zeros(len(timeinter))
         
+        FDHM = np.array([])
+        ana = Analysis()
+        
+        # add possibility of getting rid of low FDWM values e.g.
+        # FDHM = FDHM[FDHM > 0.9]
         for ind, t in enumerate(timeinter):
-            peaks[ind] = max(moreRyR[(moreRyR.clefts == t[0]) & (moreRyR.time>=t[1]) &
-                                     (moreRyR.time<=t[2])].bulkCa)
+            series = moreRyR[(moreRyR.clefts == t[0]) & (moreRyR.time>=t[1]) &
+                                     (moreRyR.time<=t[2])].bulkCa
+            times = moreRyR[(moreRyR.clefts == t[0]) & (moreRyR.time>=t[1]) &
+                            (moreRyR.time<=t[2])].time
+            
+            peaks[ind] = max(series)
             peak_times[ind] = moreRyR.loc[(moreRyR[(moreRyR.clefts == t[0]) & (moreRyR.time>=t[1])
                                                    & (moreRyR.time<=t[2])].bulkCa.idxmax())].time
+            try:
+                FDHM = np.concatenate((FDHM, ana.APD(times, series, start_time=t[1],
+                                                     end_time=t[2])))
+            except IndexError:
+                continue
         
         if getCleftnumber:
-            return quarks, sparks, peaks, len(oneRyR.clefts.drop_duplicates())
+            return quarks, sparks, peaks, FDHM, len(oneRyR.clefts.drop_duplicates())
         else:
-            return quarks, sparks, peaks        
+            return quarks, sparks, peaks, FDHM 
 
     def computeSparkBiomarkers(self, sim_dirs, params_vari, start_time, end_time,
                                sampling_dir = "sampling"):
@@ -477,13 +493,14 @@ class SparkAnalysis:
             # spark_data_df.at[counter,'LCCtot'] = sum(channels[1])
             
             # get sparks, quarks counts and mean peak Calcium
-            quarks, sparks, peaks = self.getQuarkSparkInfo(channelDF, eventduration=20)
+            quarks, sparks, peaks, FDHM = self.getQuarkSparkInfo(channelDF, eventduration=20)
             spark_data_df.at[counter, 'quarks'] = int(quarks)
             spark_data_df.at[counter, 'sparks'] = int(sparks)
             
             spark_data_df.at[counter, 'quarkspark_ratio'] = quarks/sparks
             spark_data_df.at[counter, 'Ca_peak_mean'] = peaks.mean()
             
+            spark_data_df.at[counter, 'FDHM_mean'] = FDHM.mean()
             
             # for later, when processChannelInfo is done add an if condition to check
             # if channelInfo.csv exists in clefts directory to speed up the loading!
