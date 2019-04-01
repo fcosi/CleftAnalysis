@@ -429,6 +429,15 @@ class SparkAnalysis:
             peaks[ind] = max(series)
             peak_times[ind] = moreRyR.loc[(moreRyR[(moreRyR.clefts == t[0]) & (moreRyR.time>=t[1])
                                                    & (moreRyR.time<=t[2])].bulkCa.idxmax())].time
+            
+            # if the series is too short, sometimes single opening
+            # events see more than 1 open RyR, -> don't compute FDHM then
+            if len(series) <= 2:
+                print("Attention: skipping FDHM computation, series too short!")
+                continue
+            
+            # some fast events have the beginning of the spark upstroke after
+            # the HM has been computed (IndexError thrown there) -> skip computation then
             try:
                 FDHM = np.concatenate((FDHM, ana.APD(times, series, start_time=t[1],
                                                      end_time=t[2])))
