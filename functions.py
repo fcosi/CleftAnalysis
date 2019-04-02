@@ -450,7 +450,7 @@ class SparkAnalysis:
             return quarks, sparks, peaks, FDHM 
 
     def computeSparkBiomarkers(self, sim_dirs, params_vari, start_time, end_time,
-                               sampling_dir = "sampling"):
+                               sampling_dir = "sampling", dropShortFDHM=False):
         """Computes several Biomarkers for the Spark simulations
         (max_Vm, rest_Vm, max_dVdt, dome_Vm,
         mean and std of: APD50, APD90, Ca_peaks, Ca_dia,
@@ -468,6 +468,7 @@ class SparkAnalysis:
         - start_time
         - end_time
         - sampling_dir
+        - dropShortFDHM: default False; drops FDHM<0.9 ms if True or <dropShortFDHM if int/float
         
         Returns:
         - spark_data_df: pandas DF
@@ -509,7 +510,14 @@ class SparkAnalysis:
             spark_data_df.at[counter, 'quarkspark_ratio'] = quarks/sparks
             spark_data_df.at[counter, 'Ca_peak_mean'] = peaks.mean()
             
+            # FDHM = FDHM[FDHM > 0.9]
+            if dropShortFDHM == True:
+                FDHM = FDHM[FDHM > 0.9]
+            elif type(dropShortFDHM) == int or type(dropShortFDHM) == float:
+                FDHM = FDHM[FDHM > dropShortFDHM]
+            
             spark_data_df.at[counter, 'FDHM_mean'] = FDHM.mean()
+            spark_data_df.at[counter, 'FDHM_mean_std'] = FDHM.std()
             
             # for later, when processChannelInfo is done add an if condition to check
             # if channelInfo.csv exists in clefts directory to speed up the loading!
