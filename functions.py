@@ -429,7 +429,7 @@ class SparkAnalysis:
         sparks, timeinter = self.__eventSQcounter(moreRyR, eventduration=eventduration,
                                        getTimeIntervals=True)
         if allev < sparks:
-            sparkgroups = self.__cleanOfeventSQcounter(oneRyR, sparks, timeinter)
+            sparkgroups = self.__cleanOfeventSQcounter(oneRyR, sparks, timeinter, eventduration=eventduration)
             quarks = allev - sparkgroups
         else:
             quarks = allev - sparks
