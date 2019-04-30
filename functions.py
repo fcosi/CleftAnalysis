@@ -393,6 +393,24 @@ class SparkAnalysis:
         else:
             return counter
 
+    def __cleanOfeventSQcounter(self, oneRyR, sparks, timeinter, eventduration = 20):
+        """
+        if there are more sparks than events
+        cleans out the sparks which happen during one event
+        returns the number of events with at least one spark
+        """
+        allev, timeev = self.eventSQcounter(oneRyR, eventduration=eventduration, getTimeIntervals=True)
+        
+        count = np.zeros(allev)
+        for sprk in timeinter:
+            pos = 0
+            for ev in timeev:
+                if (ev[0] != sprk[0]) and (ev[1] <= sprk[1]):
+                    pos += 1
+            
+            count[pos] = 1
+        return int(sum(count))        
+
     def getQuarkSparkInfo(self, channelDF, eventduration = 20, getCleftnumber = False):
         """
         gets Quarks and Sparks given cleftlog DataFrame and optional number of clefts firing
@@ -410,7 +428,11 @@ class SparkAnalysis:
         allev = self.__eventSQcounter(oneRyR, eventduration=eventduration)
         sparks, timeinter = self.__eventSQcounter(moreRyR, eventduration=eventduration,
                                        getTimeIntervals=True)
-        quarks = allev - sparks
+        if allev < sparks:
+            sparkgroups = self.__cleanOfeventSQcounter(oneRyR, sparks, timeinter)
+            quarks = allev - sparkgroups
+        else:
+            quarks = allev - sparks
         
         peaks = np.zeros(len(timeinter))
         peak_times = np.zeros(len(timeinter))
