@@ -399,7 +399,7 @@ class SparkAnalysis:
         cleans out the sparks which happen during one event
         returns the number of events with at least one spark
         """
-        allev, timeev = self.eventSQcounter(oneRyR, eventduration=eventduration, getTimeIntervals=True)
+        allev, timeev = self.__eventSQcounter(oneRyR, eventduration=eventduration, getTimeIntervals=True)
         
         count = np.zeros(allev)
         for sprk in timeinter:
