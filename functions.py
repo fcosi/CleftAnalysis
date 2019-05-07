@@ -658,7 +658,7 @@ class Analysis:
         times = times[times < end_time]
         
         
-        xm = (np.max(series) + np.min(series))*percent/100.0
+        xm = np.max(series) - (abs(np.max(series)) + abs(np.min(series)))*percent/100.0
         up, down = self.threshold_crossings(series, xm)       
         # remove all array entries exceeding other array
         # first a down is not allowed
