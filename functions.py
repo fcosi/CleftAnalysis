@@ -1644,7 +1644,8 @@ class Analysis:
         return x_range, y_range
 
     def meshgrid4PCEplot(self, func_approx, params_vari, params_ranges,
-                         param_x = False, param_y = False, steps = 100):
+                         param_x = False, param_y = False, steps = 100,
+                         cutplane = False):
         '''
         Returns X, Y, Z of a meshgrid for 2D colorcoded plot given fitted chaospy fct,
         varied parameters, parameter ranges, the two parameters of interest and
@@ -1674,6 +1675,14 @@ class Analysis:
             warnings.warn("""\nSome parameter value is not matching the parameter list""")
         
         params_mean = self.paramMeanUniformDistribution(params_vari, params_ranges)[0]
+
+        # checks if a cutting plane of the other parameters is given
+        if type(cutplane) == dict:
+            for param in cutplane.keys():
+                params_mean[param] = cutplane[param]
+        elif (cutplane and type(cutplane) != dict):
+            print("""A cutting plane argument different from the mean value is given, 
+            but can't be evaluated\n\t\tplease use a dictionary!""")
         
         x1 = np.linspace(params_ranges[param_x][0],params_ranges[param_x][1],steps)
         x2 = np.linspace(params_ranges[param_y][0],params_ranges[param_y][1],steps)
