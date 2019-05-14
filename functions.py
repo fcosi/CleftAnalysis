@@ -420,6 +420,7 @@ class SparkAnalysis:
         quarks, sparks: int of number of quarks/sparks in simulation and cell
         peak: array of peak Calcium
         FDHM: np.array full duration at half maximum
+        FD90: np.array full duration at 90% of max (similar to APD90)
         celftn. : optional return: opening cleft number
         """
         oneRyR = channelDF[channelDF.openRyR > 0]
@@ -438,6 +439,7 @@ class SparkAnalysis:
         peak_times = np.zeros(len(timeinter))
         
         FDHM = np.array([])
+        FD90 = np.array([])
         ana = Analysis()
         
         # add possibility of getting rid of low FDWM values e.g.
@@ -463,13 +465,15 @@ class SparkAnalysis:
             try:
                 FDHM = np.concatenate((FDHM, ana.APD(times, series, start_time=t[1],
                                                      end_time=t[2])))
+                FD90 = np.concatenate((FD90, ana.APD(times, series, start_time=t[1],
+                                                     end_time=t[2], percent=90)))
             except IndexError:
                 continue
         
         if getCleftnumber:
-            return quarks, sparks, peaks, FDHM, len(oneRyR.clefts.drop_duplicates())
+            return quarks, sparks, peaks, FDHM, FD90, len(oneRyR.clefts.drop_duplicates())
         else:
-            return quarks, sparks, peaks, FDHM 
+            return quarks, sparks, peaks, FDHM, FD90 
 
     def computeSparkBiomarkers(self, sim_dirs, params_vari, start_time, end_time,
                                sampling_dir = "sampling", dropShortFDHM=False):
@@ -525,7 +529,7 @@ class SparkAnalysis:
             # spark_data_df.at[counter,'LCCtot'] = sum(channels[1])
             
             # get sparks, quarks counts and mean peak Calcium
-            quarks, sparks, peaks, FDHM = self.getQuarkSparkInfo(channelDF, eventduration=20)
+            quarks, sparks, peaks, FDHM, FD90=self.getQuarkSparkInfo(channelDF, eventduration=20)
             spark_data_df.at[counter, 'quarks'] = int(quarks)
             spark_data_df.at[counter, 'sparks'] = int(sparks)
             
@@ -535,11 +539,16 @@ class SparkAnalysis:
             # FDHM = FDHM[FDHM > 0.9]
             if dropShortFDHM == True:
                 FDHM = FDHM[FDHM > 0.9]
+                FD90 = FD90[FD90 > 0.9]
             elif type(dropShortFDHM) == int or type(dropShortFDHM) == float:
                 FDHM = FDHM[FDHM > dropShortFDHM]
+                FD90 = FD90[FD90 > dropShortFDHM]
             
             spark_data_df.at[counter, 'FDHM_mean'] = FDHM.mean()
             spark_data_df.at[counter, 'FDHM_mean_std'] = FDHM.std()
+            
+            spark_data_df.at[counter, 'FD90_mean'] = FD90.mean()
+            spark_data_df.at[counter, 'FD90_mean_std'] = FD90.std()            
             
             # for later, when processChannelInfo is done add an if condition to check
             # if channelInfo.csv exists in clefts directory to speed up the loading!
