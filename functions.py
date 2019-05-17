@@ -412,7 +412,7 @@ class SparkAnalysis:
         return int(sum(count))        
 
     def getQuarkSparkInfo(self, channelDF, eventduration = 20, getCleftnumber = False,
-                          getSparkTimeIntervals = False):
+                          getSparkTimeIntervals = False, getMaxChannelsDurations = False):
         """
         gets Quarks and Sparks given cleftlog DataFrame and optional number of clefts firing
         also returns np.array of peak bulk Ca for each cleft
@@ -441,6 +441,10 @@ class SparkAnalysis:
         
         FDHM = np.array([])
         FD90 = np.array([])
+        
+        maxryr =  np.array([])
+        durations = np.array([])
+        
         ana = Analysis()
         
         # add possibility of getting rid of low FDWM values e.g.
@@ -456,6 +460,13 @@ class SparkAnalysis:
             peak_times[ind] = moreRyR.loc[(moreRyR[(moreRyR.clefts == t[0]) & (moreRyR.time>=t[1])
                                                    & (moreRyR.time<=t[2])].bulkCa.idxmax())].time
             
+            timediff = t[2] - t[1]
+            maxnumryrs = max(moreRyR[(moreRyR.clefts==t[0]) & (moreRyR.time>=t[1] ) &
+                                   (moreRyR.time<=t[2])].openRyR )
+            
+            durations = np.append(durations, timediff)
+            maxryr = np.append(maxryr, maxnumryrs)
+            
             # if the series is too short, sometimes single opening
             # events see more than 1 open RyR, -> don't compute FDHM then
             if len(series) <= 2:
@@ -464,6 +475,7 @@ class SparkAnalysis:
             
             # some fast events have the beginning of the spark upstroke after
             # the HM has been computed (IndexError thrown there) -> skip computation then
+            # this problem should be fixed by the subtraction of 2ms to time threshold
             try:
                 FDHM = np.concatenate((FDHM, ana.APD(times, series, start_time=t[1],
                                                      end_time=t[2])))
@@ -477,6 +489,8 @@ class SparkAnalysis:
         elif getSparkTimeIntervals:
             # this option is meant for debugging/analysis option
             return quarks, sparks, peaks, FDHM, FD90, timeinter
+        elif getMaxChannelsDurations:
+            return quarks, sparks, peaks, FDHM, FD90, maxryr, durations
         else:
             return quarks, sparks, peaks, FDHM, FD90 
 
