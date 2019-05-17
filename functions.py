@@ -411,7 +411,8 @@ class SparkAnalysis:
             count[pos] = 1
         return int(sum(count))        
 
-    def getQuarkSparkInfo(self, channelDF, eventduration = 20, getCleftnumber = False):
+    def getQuarkSparkInfo(self, channelDF, eventduration = 20, getCleftnumber = False,
+                          getSparkTimeIntervals = False):
         """
         gets Quarks and Sparks given cleftlog DataFrame and optional number of clefts firing
         also returns np.array of peak bulk Ca for each cleft
@@ -445,9 +446,10 @@ class SparkAnalysis:
         # add possibility of getting rid of low FDWM values e.g.
         # FDHM = FDHM[FDHM > 0.9]
         for ind, t in enumerate(timeinter):
-            series = moreRyR[(moreRyR.clefts == t[0]) & (moreRyR.time>=t[1]) &
+            # filter Ca time series 2ms before event to resolve upstroke
+            series = moreRyR[(moreRyR.clefts == t[0]) & (moreRyR.time>=t[1] - 2) &
                                      (moreRyR.time<=t[2])].bulkCa
-            times = moreRyR[(moreRyR.clefts == t[0]) & (moreRyR.time>=t[1]) &
+            times = moreRyR[(moreRyR.clefts == t[0]) & (moreRyR.time>=t[1] - 2) &
                             (moreRyR.time<=t[2])].time
             
             peaks[ind] = max(series)
@@ -472,6 +474,9 @@ class SparkAnalysis:
         
         if getCleftnumber:
             return quarks, sparks, peaks, FDHM, FD90, len(oneRyR.clefts.drop_duplicates())
+        elif getSparkTimeIntervals:
+            # this option is meant for debugging/analysis option
+            return quarks, sparks, peaks, FDHM, FD90, timeinter
         else:
             return quarks, sparks, peaks, FDHM, FD90 
 
