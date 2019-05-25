@@ -1288,7 +1288,7 @@ class Analysis:
         return func_approx
     
     def lasso_regression(self, sim_data_df, params_vari, distr, alphas, polyOrder = 3, 
-                      objective = "APD50_mean", printInfo = False):
+                      objective = "APD50_mean", kfold = 10, printInfo = False):
         '''
         Returns approx fct from regression fit with the lasso fit method given the biomarker DF,
         the varied parameters, the parameter cp distribution the polynomial order 
@@ -1355,12 +1355,12 @@ class Analysis:
             if alpha == 0.0:
                 linreg = LinearRegression(normalize=True)
                 reg = linreg.fit(data[predictors],data[objective])
-                val = cross_val_score(linreg,data[predictors],data[objective],cv=5).mean()
+                val = cross_val_score(linreg,data[predictors],data[objective],cv=kfold).mean()
                 r2_val = reg.score(data[predictors],data[objective])
             else:
                 lassoreg = Lasso(alpha=alpha,normalize=True, max_iter=1e5)
                 lassoreg.fit(data[predictors],data[objective])
-                val = cross_val_score(lassoreg,data[predictors],data[objective],cv=5).mean()
+                val = cross_val_score(lassoreg,data[predictors],data[objective],cv=kfold).mean()
                 r2_val = lassoreg.score(data[predictors],data[objective])
             
             if (val > best_cross_val_score):
