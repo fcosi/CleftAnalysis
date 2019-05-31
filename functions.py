@@ -1331,7 +1331,7 @@ class Analysis:
                   .format(len(ydata), len(xdata.T), polyOrder,
                           int(sp.special.binom(len(xdata.T) + polyOrder,polyOrder))))
         
-        data = sim_data_df[['kplus','kclose','J_R','J_L','Vp_max',objective]]
+        data = sim_data_df[[*params_vari,objective]]
         
         for i in range(0,len(orth_poly)):
             colname = 'phi_%d'%i
