@@ -1066,6 +1066,63 @@ class Analysis:
         
         return sim_data_df
     
+    def computeCleftGeometry(self, input_df):
+        
+        """Computes geometric cleft properties and writes them into a given biomarker data frame
+    
+        
+        Args:
+        - input_df that contains simulation folders
+        
+        Returns:
+        - sim_data_df: pandas DF
+        """
+
+        from . import extract
+        
+        sim_data_df = input_df.copy()
+
+        for index, row in sim_data_df.iterrows():
+    
+            folder = row['folder'][3:]
+    
+            ex = extract.extract(folder)
+            ryr_numbers, lcc_numbers, ryr_locations, lcc_locations = ex.crusInfo(getLocations = True)
+            
+            dists_nn = []
+            dists_4nn = []
+            for ryr_location in ryr_locations:
+                
+                for i in range(0,len(ryr_location[0])):
+                    dists = []
+                    x1 = ryr_location[0][i]
+                    y1 = ryr_location[1][i]
+                    distance = np.infty
+                    for j in range(0,len(ryr_location[0])):
+                        if (i==j):
+                            continue
+                        x2 = ryr_location[0][j]
+                        y2 = ryr_location[1][j]
+                        distance = np.sqrt((x1-x2)**2 + (y1-y2)**2)
+                        dists.append(distance)
+                    
+                    dists.sort()
+                    
+
+                    dists_nn.append(dists[0])
+                    mean_4nn = sum(dists[0:4])/4.0
+                    dists_4nn.append(mean_4nn)
+    
+    
+            dists_nn = np.array(dists_nn)
+            dists_4nn = np.array(dists_4nn)
+
+            sim_data_df.at[index,"nn_mean"] = dists_nn.mean()*1000.0
+            sim_data_df.at[index,"nn_std"] = dists_nn.std()*1000.0
+            sim_data_df.at[index,"4nn_mean"] = dists_4nn.mean()*1000.0
+        
+        return sim_data_df
+    
     def get_experimental_Ca(self, fluo4_conc, parameters):
         """Computes the experimental calcium concentration, which is inferred from a fluorescent dye as fluo4. 
         In cleftdyn fluo4 is represented by "Bspecial". 
