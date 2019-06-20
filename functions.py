@@ -580,7 +580,35 @@ class SparkAnalysis:
         
         return spark_data_df
 
-    
+    def plotOpenRyRtimeSeries(self, sim_dir, sampling_dir, saveFig=False):
+        """
+        Plot all time series of open RyRs of one simulation given:
+        - sim_dir: number of simulation directory
+        - sampling_dir: sampling subfolder
+        """
+        from . import extract
+        
+        f = extract.extract(sim_dir,sampling_dir)
+        channelDF = f.getCleftChannelInformation()
+        oneRyR = channelDF[channelDF.openRyR > 0]
+        openclefts = oneRyR.clefts.drop_duplicates()
+        
+        numopenclefts = len(openclefts)
+        
+        fig, ax = plt.subplots(numopenclefts, 1, tight_layout=True, figsize=(14, 3*numopenclefts))
+        for ind, cl in enumerate(openclefts):
+            ax[ind].plot(oneRyR[oneRyR.clefts == cl].time, oneRyR[oneRyR.clefts == cl].openRyR)
+            ax[ind].set_title(cl)
+        
+        plt.tight_layout()
+        if saveFig == True:
+            print("Attention: no saving path specified, saving into cwd")
+            fig.savefig("./time-series-openryr_sim{}_from{}.pdf".format(sim_dir, sampling_dir))
+        elif type(saveFig) == str:
+            fig.savefig(saveFig)
+        else:
+            fig.show()        
+        
 # ----------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------
