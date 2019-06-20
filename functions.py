@@ -26,7 +26,12 @@ class SparkAnalysis:
     """
     
     def __init__(self):
-        pass
+        '''
+            initialization for the spark cascade analysis
+        '''
+        self.datafr = pd.DataFrame()
+        self.list_of_sparks = []
+        self.cascade = []
         #self.folder = folder
         #self.processes = self.get_used_processes()
         #self.cru_info = self.get_cru_info()
@@ -609,6 +614,184 @@ class SparkAnalysis:
         else:
             fig.show()        
         
+        
+    def sparkAroundCleft(self, spark_info, waitingTime = 30, radius = 1, channelDF = pd.DataFrame(), getArea = False):
+        '''
+        - gets sparks info with [cleft, start time, end time]
+        - gets a waiting time 
+        - can get a dataframe if this function is only used, for that getArea = True
+        
+        
+        Calculates if around a certain cleft with a spark, appear other sparks in the Clefts in a sphere around them in the time 
+        after the first spark
+        
+    
+        '''
+        cleftNo = spark_info[0]
+        timeOfSpark = spark_info[1]
+        
+        
+        if getArea:
+            self.list_of_sparks = self.getQuarkSparkInfo(channelDF, getSparkTimeIntervals = True)
+            
+                
+        
+        cru_x = self.datafr[self.datafr.clefts == cleftNo].xcru[0]
+        cru_y = self.datafr[self.datafr.clefts == cleftNo].ycru[0]
+        cru_z = self.datafr[self.datafr.clefts == cleftNo].zcru[0]
+        df = self.datafr[self.datafr.clefts != cleftNo]
+        df = df[((df.xcru - cru_x)**2 + (df.ycru - cru_y)**2 + (df.zcru - cru_z)**2 <= radius**2) & 
+                (df.time >= timeOfSpark) & (df.time <= timeOfSpark + waitingTime)]
+
+        clef = df.clefts.drop_duplicates().values
+        time = df.time.values
+        sparks = [sp for sp in self.list_of_sparks if ((sp[0] in clef) & (sp[1] in time))]
+                    
+        return sparks
+    
+    def nextNeighbours(self, spark_info, waitingTime = 30, channelDF = pd.DataFrame(), getArea = False):
+        '''
+        - gets sparks info with [cleft, start time, end time]
+        - gets a waiting time 
+        - can get a dataframe if this function is only used, for that getArea = True
+        
+        Calculates if around a certain cleft with a spark, appear other sparks in the nearest Neighbourhood around them in the time 
+        after the first spark
+    
+        '''
+        cleftNo = spark_info[0]
+        timeOfSpark = spark_info[1] 
+        cleft_in_z = np.array([])
+        dist_z = 0
+        
+        variance = 1.01
+        radius = abs(self.datafr.xcru.drop_duplicates()[0] - self.datafr.xcru.drop_duplicates()[1]) * variance
+        if len(self.datafr.zcru.drop_duplicates().values) > 1 : 
+            dist_z = abs(self.datafr.zcru.drop_duplicates()[0] - self.datafr.zcru.drop_duplicates()[1]) * variance
+        
+        if getArea:
+            self.list_of_sparks = self.getQuarkSparkInfo(channelDF, getAllClefts = True)
+        
+        cru_x = self.datafr[self.datafr.clefts == cleftNo].xcru[0]
+        cru_y = self.datafr[self.datafr.clefts == cleftNo].ycru[0]
+        cru_z = self.datafr[self.datafr.clefts == cleftNo].zcru[0]
+        df = self.datafr[self.datafr.clefts != cleftNo]
+
+        if dist_z > radius :
+            cleft_in_z = df[(df.xcru == cru_x) & (df.ycru == cru_y) & ((df.zcru - cru_z)**2 <= dist_z**2) & 
+                            (df.time >= timeOfSpark) & (df.time <= timeOfSpark + waitingTime)].clefts.drop_duplicates().values
+            
+        df = df[((df.xcru - cru_x)**2 + (df.ycru - cru_y)**2 + (df.zcru - cru_z)**2 <= radius**2) & 
+                (df.time >= timeOfSpark) & (df.time <= timeOfSpark + waitingTime)]
+
+        clef = np.concatenate((df.clefts.drop_duplicates().values, cleft_in_z), axis = 0)
+        time = df.time.values
+        sparks = [sp for sp in self.list_of_sparks if ((sp[0] in clef) & (sp[1] in time))]
+                    
+        return sparks
+
+    def __recursive_cascade(self, spark_info, layer, radius, neighbour = False):
+        '''
+        - gets spark info with [cleft, start time, end time]
+        - gets the layer of the cascade
+        - gets a radius for the neighbouring clefts or the next neighbourhood
+        
+        
+        calculates the cascade of sparks in a recursive way
+        '''
+
+        if neighbour == False:
+            sparks = self.sparkAroundCleft(spark_info,radius = radius)
+        else:
+            sparks = self.nextNeighbours(spark_info)
+        
+        self.cascade.append([layer, spark_info])
+
+        self.list_of_sparks = [sp for sp in self.list_of_sparks if not sp in sparks]
+        for sparkinf in sparks:
+            self.__recursive_cascade(spark_info = sparkinf, layer = layer + 1, 
+                                                radius = radius, 
+                                                neighbour = neighbour)
+        return 1
+    
+    def sparkCascade(self, channelDF, radius = 1, neighbour = False):
+        '''
+         - gets a dataframe from a simulation folder
+         - calculates all sparks 
+         - calculates if there is a cascade of sparks and returns the sparks
+         
+         returns:
+             array of:
+         [layer in the cascade,(cleft, start time, end time of spark)]
+         
+         one cascade is from one [0,(...)] to the next [0,(...)]
+         the ones marked with [1,(...)] are triggered by the last [0,(...)] and so on ...
+        '''
+        self.datafr = channelDF
+        quarks, sparks, peaks, FDHM, FD90, timeinter = self.getQuarkSparkInfo(self.datafr, getSparkTimeIntervals = True)
+        self.list_of_sparks = timeinter
+        self.cascade = []
+        length = len(self.list_of_sparks)
+        layer = 0
+        
+        while self.list_of_sparks:
+            start_time = [sp[1] for sp in self.list_of_sparks]
+            spark = self.list_of_sparks[start_time.index(min(start_time))]
+            self.list_of_sparks = [sp for sp in self.list_of_sparks if ((sp[0] != spark[0]) or 
+                                                                        (sp[1] != spark[1]))]
+            self.__recursive_cascade(spark, layer, radius, neighbour = neighbour)
+            
+        if length == len(self.cascade):    
+            return self.cascade
+        else:
+            return -1
+        
+    def cascadeInCleft(self, channelDF, cleft, start_time, end_time, radius = 1, neighbour = False):
+        '''
+        - gets a dataframe 
+        - gets a specfic cleft with a spark starting and ending time
+        - gets a radius or the next neighbourhood
+        
+        Calculates the cascade starting from a certain cleft at a certain time
+        
+        returns:
+             array of:
+         [layer in the cascade,(cleft, start time, end time of spark)]
+         
+         one cascade is from one [0,(...)] to the next [0,(...)]
+         the ones marked with [1,(...)] are triggered by the last [0,(...)] and so on ...
+        '''
+        
+        self.list_of_sparks = self.getQuarkSparkInfo(self.datafr, getSparkTimeIntervals = True)
+        self.cascade = list(self.list_of_sparks)
+        self.datafr = channelDF
+        
+        self.__recursive([cleft, start_time, end_time], layer = 0, 
+                               radius = radius, neighbour = neighbour)
+        
+        return self.cascade
+    
+    def makroSpark(self, cascade):
+        '''
+        - gets a cascade
+        
+        calculates if there is a macro spark 
+        a macro spark is a cascade with more than two sparks 
+        returns a list of macro cascades with their first spark as macro spark
+        '''
+        macro = []
+        micro = []
+        for spark in cascade:
+            if spark[0] == 0:
+                if len(micro) > 2:
+                    macro.append(micro)
+                micro = [spark]
+            if spark[0] != 0:
+                micro.append(spark)
+        if len(micro) > 2:
+            macro.append(micro)
+        return macro 
+
 # ----------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------
