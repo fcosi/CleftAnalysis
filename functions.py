@@ -585,7 +585,7 @@ class SparkAnalysis:
         
         return spark_data_df
 
-    def plotOpenRyRtimeSeries(self, sim_dir, sampling_dir, saveFig=False):
+    def plotOpenRyRtimeSeries(self, sim_dir, sampling_dir, saveFig=False, start_time = 0.0, end_time = np.infty, max_openclefts = 20000):
         """
         Plot all time series of open RyRs of one simulation given:
         - sim_dir: number of simulation directory
@@ -595,13 +595,20 @@ class SparkAnalysis:
         
         f = extract.extract(sim_dir,sampling_dir)
         channelDF = f.getCleftChannelInformation()
+        channelDF = channelDF[channelDF['time'] < end_time]
+        channelDF = channelDF[channelDF['time'] > start_time]
+        
         oneRyR = channelDF[channelDF.openRyR > 0]
         openclefts = oneRyR.clefts.drop_duplicates()
         
         numopenclefts = len(openclefts)
         
+        
+        
         fig, ax = plt.subplots(numopenclefts, 1, tight_layout=True, figsize=(14, 3*numopenclefts))
         for ind, cl in enumerate(openclefts):
+            if (ind > max_openclefts):
+                break
             ax[ind].plot(oneRyR[oneRyR.clefts == cl].time, oneRyR[oneRyR.clefts == cl].openRyR)
             ax[ind].set_title(cl)
         
@@ -1271,6 +1278,11 @@ class Analysis:
             times_peaks, Ca_exp_minima = self.get_Ca_sys_minima(list(varm['Time']),ca_exp,start_time=start_time,end_time=end_time)
             sim_data_df.at[counter,'Ca_exp_dia_mean'] = Ca_exp_minima.mean()
             sim_data_df.at[counter,'Ca_exp_dia_std'] = Ca_exp_minima.std()
+            
+            times_to_peak_exp = self.get_Ca_times_to_peak(list(vari['time']),ca_exp,start_time=start_time, end_time=end_time)
+    
+            sim_data_df.at[counter,'Ca_exp_time_to_peak_mean'] = times_to_peak_exp.mean()
+            sim_data_df.at[counter,'Ca_exp_time_to_peak_std'] = times_to_peak_exp.std()
             
             sim_data_df.at[counter, 'folder'] = "../{}/{}/".format(sampling_dir, sim_dir)
 
