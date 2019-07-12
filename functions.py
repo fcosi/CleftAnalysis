@@ -1403,7 +1403,7 @@ class Analysis:
             sim_data_df.at[index,"%snn_std" % knn ] = dists_knn.std()*1000.0
             sim_data_df.at[index,"norm_convex_hull_mean"] = norm_convex_hull_areas.mean()*1000.0*1000.0
             sim_data_df.at[index,"ryrs_in_roi_mean"] = ryrs_in_roi.mean()
-            sim_data_df.at[index,"mean_R_at_half_cum_RDF"] = rs_at_half_cum_RDF.mean()
+            sim_data_df.at[index,"mean_R_at_half_cum_RDF"] = rs_at_half_cum_RDF.mean()*1000.0
             sim_data_df.at[index,"mean_occupancy"] = occupancies.mean()
         
         return sim_data_df
