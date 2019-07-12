@@ -17,6 +17,7 @@ from scipy.signal import argrelextrema
 from sklearn.linear_model import *
 from sklearn.model_selection import cross_val_score
 import chaospy as cp
+import random
 
 import matplotlib.pyplot as plt
 
@@ -1289,7 +1290,7 @@ class Analysis:
         
         return sim_data_df
     
-    def computeCleftGeometry(self, input_df):
+    def computeCleftGeometry(self, input_df, knn = 8, radiusOfInfluence = 50.0):
         
         """Computes geometric cleft properties and writes them into a given biomarker data frame
     
@@ -1310,11 +1311,27 @@ class Analysis:
             folder = row['folder'][3:]
     
             ex = extract.extract(folder)
-            ryr_numbers, lcc_numbers, ryr_locations, lcc_locations = ex.crusInfo(getLocations = True)
+            ryr_numbers, lcc_numbers, radii, ryr_locations, lcc_locations = ex.crusInfo(getLocations = True, getRadius = True)
             
             dists_nn = []
             dists_4nn = []
-            for ryr_location in ryr_locations:
+            dists_knn = []
+            norm_convex_hull_areas = []
+            ryrs_in_roi = []
+            rs_at_half_cum_RDF = []
+            occupancies = []
+            
+            
+            for cru_nr, ryr_location in enumerate(ryr_locations):
+                
+                count_in_cru = 0.0
+                count_in_roi = 0.0
+                
+                rand_x = np.random.uniform(-300.0,300.0,100)
+                rand_y = np.random.uniform(-300.0,300.0,100)
+                #rand_x = np.random.uniform(-radii[index],radii[index],100)
+                #rand_y = np.random.uniform(-radii[index],radii[index],100)
+                              
                 
                 for i in range(0,len(ryr_location[0])):
                     dists = []
@@ -1331,18 +1348,63 @@ class Analysis:
                     
                     dists.sort()
                     
-
+                    for i in range(len(rand_x)):
+                        distance = 0.0
+                        distance = (x1-rand_x[i])**2 + (y1-rand_y[i])**2
+                        
+                        if(distance < radiusOfInfluence):
+                            count_in_roi += 1.0
+                        
+                    
                     dists_nn.append(dists[0])
                     mean_4nn = sum(dists[0:4])/4.0
                     dists_4nn.append(mean_4nn)
+                    
+                    mean_knn = sum(dists[0:knn])/float(knn)
+                    dists_knn.append(mean_knn)
+                    
+                    r_at_half_cum_RDF = 0.5*sum(dists[0:int(len(radii)/2)])/float(len(radii))
+                    rs_at_half_cum_RDF.append(r_at_half_cum_RDF)
+                    
+                    dists_in_roi = [r for r in dists if r <= radiusOfInfluence]
+                    ryrs_in_roi.append(len(dists_in_roi))
+                    
+                points = np.array([ryr_location[0],ryr_location[1]]).T
+                convex_hull_area = 0.0
+                
+                try:
+                    #call Delaunay with pts input
+                    convex_hull_area = sp.spatial.ConvexHull(points).volume
+                except:
+                    #when exception arises set out to False
+                    convex_hull_area = 0.0
+                
+                norm_convex_hull_areas.append(convex_hull_area/len(ryr_location[0]))
+                
+                occupancies.append(count_in_roi/len(ryr_location[0]))
+            
+
     
     
             dists_nn = np.array(dists_nn)
             dists_4nn = np.array(dists_4nn)
+            dists_knn = np.array(dists_knn)
+            norm_convex_hull_areas = np.array(norm_convex_hull_areas)
+            ryrs_in_roi = np.array(ryrs_in_roi)
+            rs_at_half_cum_RDF = np.array(rs_at_half_cum_RDF)
+            occupancies = np.array(occupancies)
+            
 
             sim_data_df.at[index,"nn_mean"] = dists_nn.mean()*1000.0
             sim_data_df.at[index,"nn_std"] = dists_nn.std()*1000.0
             sim_data_df.at[index,"4nn_mean"] = dists_4nn.mean()*1000.0
+            sim_data_df.at[index,"4nn_std"] = dists_4nn.std()*1000.0
+            sim_data_df.at[index,"%snn_mean" % knn ] = dists_knn.mean()*1000.0
+            sim_data_df.at[index,"%snn_std" % knn ] = dists_knn.std()*1000.0
+            sim_data_df.at[index,"norm_convex_hull_mean"] = norm_convex_hull_areas.mean()*1000.0*1000.0
+            sim_data_df.at[index,"ryrs_in_roi_mean"] = ryrs_in_roi.mean()
+            sim_data_df.at[index,"mean_R_at_half_cum_RDF"] = rs_at_half_cum_RDF.mean()
+            sim_data_df.at[index,"mean_occupancy"] = occupancies.mean()
         
         return sim_data_df
     
