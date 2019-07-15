@@ -418,7 +418,7 @@ class SparkAnalysis:
         return int(sum(count))        
 
     def getQuarkSparkInfo(self, channelDF, eventduration = 20, getCleftnumber = False,
-                          getSparkTimeIntervals = False, getMaxChannelsDurations = False):
+                          getSparkTimeIntervals = False, getMaxChannelsDurations = False, getFluo4Data = False):
         """
         gets Quarks and Sparks given cleftlog DataFrame and optional number of clefts firing
         also returns np.array of peak bulk Ca for each cleft
@@ -430,8 +430,18 @@ class SparkAnalysis:
         FD90: np.array full duration at 90% of max (similar to APD90)
         celftn. : optional return: opening cleft number
         """
+        
+        if (getFluo4Data):
+            #channelDF.drop(columns = ["bulkCa"])
+            channelDF = channelDF.rename(index=str, columns={"bulkCa": "bulkCa_"})
+            channelDF = channelDF.rename(index=str, columns={"ca_exp": "bulkCa"})
+            print("extract fluo4 data")
+            
+        
         oneRyR = channelDF[channelDF.openRyR > 0]
         moreRyR = oneRyR[oneRyR.openRyR > 1]
+        
+        
         
         allev = self.__eventSQcounter(oneRyR, eventduration=eventduration)
         sparks, timeinter = self.__eventSQcounter(moreRyR, eventduration=eventduration,
@@ -501,7 +511,7 @@ class SparkAnalysis:
             return quarks, sparks, peaks, FDHM, FD90 
 
     def computeSparkBiomarkers(self, sim_dirs, params_vari, start_time, end_time,
-                               sampling_dir = "sampling", dropShortFDHM=False):
+                               sampling_dir = "sampling", fromCSV = False, dropShortFDHM=False):
         """Computes several Biomarkers for the Spark simulations
         (max_Vm, rest_Vm, max_dVdt, dome_Vm,
         mean and std of: APD50, APD90, Ca_peaks, Ca_dia,
@@ -534,7 +544,12 @@ class SparkAnalysis:
             vari = f.readIonic()
             varm = f.readMass()
             para = f.getParameters()
-            channelDF = f.getCleftChannelInformation()
+            channelDF = pd.DataFrame()
+            if (not fromCSV):
+                channelDF = f.getCleftChannelInformation()
+            else:
+                print("start fluo4 analysis!")
+                channelDF = f.getCleftChannelInformation_fromCSV()
             
             if (max(vari['time']) < end_time):
                 import warnings
@@ -582,6 +597,27 @@ class SparkAnalysis:
             spark_data_df.at[counter, "openRyR_per_ms"] = float(chInfo_df)
             
             spark_data_df.at[counter, 'folder'] = "../{}/{}/".format(sampling_dir, sim_dir)
+            
+            
+            if fromCSV:
+                quarks, sparks, peaks, FDHM, FD90=self.getQuarkSparkInfo(channelDF, eventduration=20, getFluo4Data = True)
+  
+                spark_data_df.at[counter, 'Ca_exp_peak_mean'] = peaks.mean()
+                
+                # FDHM = FDHM[FDHM > 0.9]
+                if dropShortFDHM == True:
+                    FDHM = FDHM[FDHM > 0.9]
+                    FD90 = FD90[FD90 > 0.9]
+                elif type(dropShortFDHM) == int or type(dropShortFDHM) == float:
+                    FDHM = FDHM[FDHM > dropShortFDHM]
+                    FD90 = FD90[FD90 > dropShortFDHM]
+                
+                spark_data_df.at[counter, 'FDHM_exp_mean'] = FDHM.mean()
+                spark_data_df.at[counter, 'FDHM_exp_std'] = FDHM.std()
+                
+                spark_data_df.at[counter, 'FD90_exp_mean'] = FD90.mean()
+                spark_data_df.at[counter, 'FD90_exp_std'] = FD90.std() 
+                
         
         
         return spark_data_df

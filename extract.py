@@ -340,6 +340,26 @@ class extract:
         df = df.rename(index=str, columns={"Unnamed: 0": "counter0", "Unnamed: 1": "counter1"})
         
         return df
+    
+    def getCleftChannelInformation_fromCSV(self):
+        '''
+        get time, open RyR, open LCC, cleft Location and total channel numbers 
+        from files in linescan/
+        if not existing create it
+        
+        - Return:
+        pandas DataFrame
+        '''        
+        
+        outputname = self.folder + "linescan/openChannels_fluo4.csv"
+        if (not os.path.exists(outputname)):
+            self.saveOpenChannels_fromCSV()
+        
+        df = pd.read_csv(outputname, sep=" ")
+        df = df.rename(index=str, columns={"Unnamed: 0": "counter0", "Unnamed: 1": "counter1"})
+        
+        return df
+    
 
     def getOpenChannels(self):
         """
@@ -347,6 +367,73 @@ class extract:
         renaming of fct meaningfull
         """
         return self.getCleftChannelInformation()
+    
+    def saveOpenChannels_fromCSV(self, overwrite = False):
+        '''
+        save time steps, number of open RyR and LCC to file in clefts/ dir
+        
+        ATTENTION: works properly only with master branch from (2019/07/09)
+        '''
+        
+        print("Warning: saving open channels, this might take a while..")
+        outputname = self.folder + "linescan/openChannels_fluo4.csv"
+        if os.path.isfile(outputname) and not overwrite:
+            import warnings
+            warnings.warn("cleft ouput for open channels already exists!")
+            return None
+
+        cru_info = self.get_linescan_cru_info()
+        parameters = self.getParameters()
+                    
+        cru_info_clean = pd.DataFrame(data=[], index=[], columns=["time","clefts","bulkCa"])
+        
+        Fmax = float(parameters['Bspecial_tot'])
+        Fmin = 0.0
+        Kd = float(parameters['kspecial_minus'])/float(parameters['kspecial_plus'])
+
+        index = 0
+        for cru_id in cru_info["cru_id"].unique():
+            temp = cru_info[cru_info["cru_id"] == cru_id]# .astype(float)
+            #print(cru_id)
+            #print(temp["time"].unique())
+            
+            for time in temp["time"].unique():
+                #range(len(cru_info["time"].unique())):
+                #time =  temp["time"].unique()[i]
+                temp_time =  temp[ temp["time"] == time].astype(float)
+            
+                cru_info_clean.at[index,"time"] = time
+
+                fluo4_conc = np.array(temp_time['fluo4'].astype(float)).max()
+
+                cru_info_clean.at[index,"cyto_ca2+"] = np.array(temp_time['cyto_ca2+'].astype(float)).max()
+                cru_info_clean.at[index,"fluo4"] = np.array(temp_time['fluo4'].astype(float)).max()
+
+                cru_info_clean.at[index,"bulkCa"] = np.array(temp_time['cyto_ca2+'].astype(float)).max()
+                cru_info_clean.at[index,"openRyR"] = np.array(temp_time['open_ryrs'].astype(int)).max()
+
+                cru_info_clean.at[index,"clefts"] = cru_id
+
+                ca_exp = Kd*(fluo4_conc- Fmin)/(Fmax - fluo4_conc)
+                cru_info_clean.at[index,"ca_exp"] = ca_exp
+                
+                cru_info_clean.at[index,"xcru"] = np.array(temp_time['cru_x'].astype(float))[0]
+                cru_info_clean.at[index,"ycru"] = np.array(temp_time['cru_y'].astype(float))[0]
+                cru_info_clean.at[index,"zcru"] = np.array(temp_time['cru_z'].astype(float))[0]
+                
+                index += 1
+            
+        
+        print("length of cru info: %s" % len(cru_info_clean))
+            
+            
+        outfile = open(outputname, 'a')
+        cru_info_clean.to_csv(outfile, header=True, sep=" ", index=False)
+        outfile.close()
+        
+        
+        
+        
 
     def saveOpenChannels(self, overwrite = False):
         '''
