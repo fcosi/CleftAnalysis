@@ -406,10 +406,10 @@ class extract:
 
                 fluo4_conc = np.array(temp_time['fluo4'].astype(float)).max()
 
-                cru_info_clean.at[index,"cyto_ca2+"] = np.array(temp_time['cyto_ca2+'].astype(float)).max()
-                cru_info_clean.at[index,"fluo4"] = np.array(temp_time['fluo4'].astype(float)).max()
+                cru_info_clean.at[index,"cyto_ca2+"] = np.array(temp_time['cyto_ca2+'].astype(float)).mean()
+                cru_info_clean.at[index,"fluo4"] = np.array(temp_time['fluo4'].astype(float)).mean()
 
-                cru_info_clean.at[index,"bulkCa"] = np.array(temp_time['cyto_ca2+'].astype(float)).max()
+                cru_info_clean.at[index,"bulkCa"] = np.array(temp_time['cyto_ca2+'].astype(float)).mean()
                 cru_info_clean.at[index,"openRyR"] = np.array(temp_time['open_ryrs'].astype(int)).max()
 
                 cru_info_clean.at[index,"clefts"] = cru_id
