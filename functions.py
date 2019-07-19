@@ -572,8 +572,11 @@ class SparkAnalysis:
             quarks, sparks, peaks, FDHM, FD90=self.getQuarkSparkInfo(channelDF, eventduration=20)
             spark_data_df.at[counter, 'quarks'] = int(quarks)
             spark_data_df.at[counter, 'sparks'] = int(sparks)
-            
-            spark_data_df.at[counter, 'quarkspark_ratio'] = quarks/sparks
+
+            if sparks == 0:
+                spark_data_df.at[counter, 'quarkspark_ratio'] = np.NaN
+            else:
+                spark_data_df.at[counter, 'quarkspark_ratio'] = quarks/sparks
             spark_data_df.at[counter, 'Ca_peak_mean'] = peaks.mean()
             
             # FDHM = FDHM[FDHM > 0.9]
