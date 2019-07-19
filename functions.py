@@ -1316,7 +1316,7 @@ class Analysis:
             sim_data_df.at[counter,'Ca_exp_dia_mean'] = Ca_exp_minima.mean()
             sim_data_df.at[counter,'Ca_exp_dia_std'] = Ca_exp_minima.std()
             
-            times_to_peak_exp = self.get_Ca_times_to_peak(list(vari['time']),ca_exp,start_time=start_time, end_time=end_time)
+            times_to_peak_exp = self.get_Ca_times_to_peak(list(varm['Time']),ca_exp,start_time=start_time, end_time=end_time)
     
             sim_data_df.at[counter,'Ca_exp_time_to_peak_mean'] = times_to_peak_exp.mean()
             sim_data_df.at[counter,'Ca_exp_time_to_peak_std'] = times_to_peak_exp.std()
