@@ -1361,7 +1361,8 @@ class Analysis:
             ryrs_in_roi = []
             rs_at_half_cum_RDF = []
             occupancies = []
-            occupancies_vol = []
+            occupancies_per_vol = []
+            occupancies_times_vol = []
             
             for cru_nr, ryr_location in enumerate(ryr_locations):
                 
@@ -1434,7 +1435,8 @@ class Analysis:
                 norm_area_convex_hull_areas.append(convex_hull_area/(np.pi*radii[cru_nr]*radii[cru_nr]))
                 norm_jsr_convex_hull_areas.append(convex_hull_area/((4.0/3.0)*np.pi*radii[cru_nr]*radii[cru_nr]*radii[cru_nr]))
                 
-                occupancies_vol.append(count_in_roi/((4.0/3.0)*np.pi*radii[cru_nr]*radii[cru_nr]*radii[cru_nr]))
+                occupancies_per_vol.append(count_in_roi/((4.0/3.0)*np.pi*radii[cru_nr]*radii[cru_nr]*radii[cru_nr]))
+                occupancies_times_vol.append(count_in_roi*((4.0/3.0)*np.pi*radii[cru_nr]*radii[cru_nr]*radii[cru_nr]))
                 
                 if (count_in_cru > 0.0):
                     occupancies.append(count_in_roi/count_in_cru)
@@ -1453,7 +1455,8 @@ class Analysis:
             ryrs_in_roi = np.array(ryrs_in_roi)
             rs_at_half_cum_RDF = np.array(rs_at_half_cum_RDF)
             occupancies = np.array(occupancies)
-            occupancies_vol = np.array(occupancies_vol)
+            occupancies_per_vol = np.array(occupancies_per_vol)
+            occupancies_times_vol = np.array(occupancies_times_vol)
             
 
             sim_data_df.at[index,"nn_mean"] = dists_nn.mean()*1000.0
@@ -1468,7 +1471,8 @@ class Analysis:
             sim_data_df.at[index,"ryrs_in_roi_mean"] = ryrs_in_roi.mean()
             sim_data_df.at[index,"mean_R_at_half_cum_RDF"] = rs_at_half_cum_RDF.mean()*1000.0
             sim_data_df.at[index,"mean_occupancy"] = occupancies.mean()
-            sim_data_df.at[index,"mean_occupancy_vol"] = occupancies_vol.mean()
+            sim_data_df.at[index,"mean_occupancy_per_vol"] = occupancies_per_vol.mean()
+            sim_data_df.at[index,"mean_occupancy_times_vol"] = occupancies_times_vol.mean()
         
         return sim_data_df
     
