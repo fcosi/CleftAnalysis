@@ -1355,21 +1355,23 @@ class Analysis:
             dists_nn = []
             dists_4nn = []
             dists_knn = []
-            norm_convex_hull_areas = []
+            norm_ryr_convex_hull_areas = []
+            norm_area_convex_hull_areas = []
+            norm_jsr_convex_hull_areas = []
             ryrs_in_roi = []
             rs_at_half_cum_RDF = []
             occupancies = []
-            
+            occupancies_vol = []
             
             for cru_nr, ryr_location in enumerate(ryr_locations):
                 
                 count_in_cru = 0.0
                 count_in_roi = 0.0
                 
-                rand_x = np.random.uniform(-300.0,300.0,100)
-                rand_y = np.random.uniform(-300.0,300.0,100)
-                #rand_x = np.random.uniform(-radii[index],radii[index],100)
-                #rand_y = np.random.uniform(-radii[index],radii[index],100)
+                #rand_x = np.random.uniform(-300.0,300.0,100)
+                #rand_y = np.random.uniform(-300.0,300.0,100)
+                rand_x = np.random.uniform(-radii[cru_nr],radii[cru_nr],100)
+                rand_y = np.random.uniform(-radii[cru_nr],radii[cru_nr],100)
                               
                 
                 for i in range(0,len(ryr_location[0])):
@@ -1391,8 +1393,10 @@ class Analysis:
                         distance = 0.0
                         distance = (x1-rand_x[i])**2 + (y1-rand_y[i])**2
                         
-                        if(distance < radiusOfInfluence):
-                            count_in_roi += 1.0
+                        if(rand_x[i]**2 + rand_y[i]**2 < radii[cru_nr]*radii[cru_nr]):
+                            count_in_cru += 1.0
+                            if(distance < radiusOfInfluence**2):
+                                count_in_roi += 1.0
                         
                     
                     dists_nn.append(dists[0])
@@ -1418,9 +1422,16 @@ class Analysis:
                     #when exception arises set out to False
                     convex_hull_area = 0.0
                 
-                norm_convex_hull_areas.append(convex_hull_area/len(ryr_location[0]))
+                norm_ryr_convex_hull_areas.append(convex_hull_area/len(ryr_location[0]))
+                norm_area_convex_hull_areas.append(convex_hull_area/(np.pi*radii[cru_nr]*radii[cru_nr]))
+                norm_jsr_convex_hull_areas.append(convex_hull_area/((4.0/3.0)*np.pi*radii[cru_nr]*radii[cru_nr]*radii[cru_nr]))
                 
-                occupancies.append(count_in_roi/len(ryr_location[0]))
+                occupancies_vol.append(count_in_roi/((4.0/3.0)*np.pi*radii[cru_nr]*radii[cru_nr]*radii[cru_nr]))
+                
+                if (count_in_cru > 0.0):
+                    occupancies.append(count_in_roi/count_in_cru)
+                else:
+                    occupancies.append(0.0)
             
 
     
@@ -1428,10 +1439,13 @@ class Analysis:
             dists_nn = np.array(dists_nn)
             dists_4nn = np.array(dists_4nn)
             dists_knn = np.array(dists_knn)
-            norm_convex_hull_areas = np.array(norm_convex_hull_areas)
+            norm_ryr_convex_hull_areas = np.array(norm_ryr_convex_hull_areas)
+            norm_area_convex_hull_areas = np.array(norm_area_convex_hull_areas)
+            norm_jsr_convex_hull_areas = np.array(norm_jsr_convex_hull_areas)
             ryrs_in_roi = np.array(ryrs_in_roi)
             rs_at_half_cum_RDF = np.array(rs_at_half_cum_RDF)
             occupancies = np.array(occupancies)
+            occupancies_vol = np.array(occupancies_vol)
             
 
             sim_data_df.at[index,"nn_mean"] = dists_nn.mean()*1000.0
@@ -1440,10 +1454,13 @@ class Analysis:
             sim_data_df.at[index,"4nn_std"] = dists_4nn.std()*1000.0
             sim_data_df.at[index,"%snn_mean" % knn ] = dists_knn.mean()*1000.0
             sim_data_df.at[index,"%snn_std" % knn ] = dists_knn.std()*1000.0
-            sim_data_df.at[index,"norm_convex_hull_mean"] = norm_convex_hull_areas.mean()*1000.0*1000.0
+            sim_data_df.at[index,"norm_ryr_convex_hull_mean"] = norm_ryr_convex_hull_areas.mean()*1000.0*1000.0
+            sim_data_df.at[index,"norm_area_convex_hull_mean"] = norm_area_convex_hull_areas.mean()*1000.0*1000.0
+            sim_data_df.at[index,"norm_jsr_convex_hull_mean"] = norm_jsr_convex_hull_areas.mean()*1000.0*1000.0
             sim_data_df.at[index,"ryrs_in_roi_mean"] = ryrs_in_roi.mean()
             sim_data_df.at[index,"mean_R_at_half_cum_RDF"] = rs_at_half_cum_RDF.mean()*1000.0
             sim_data_df.at[index,"mean_occupancy"] = occupancies.mean()
+            sim_data_df.at[index,"mean_occupancy_vol"] = occupancies_vol.mean()
         
         return sim_data_df
     
