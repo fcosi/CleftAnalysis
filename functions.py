@@ -1329,7 +1329,7 @@ class Analysis:
         
         return sim_data_df
     
-    def computeCleftGeometry(self, input_df, knn = 8, radiusOfInfluence = 50.0):
+    def computeCleftGeometry(self, input_df, knn = 8, radiusOfInfluence = 0.05):
         
         """Computes geometric cleft properties and writes them into a given biomarker data frame
     
@@ -1391,12 +1391,20 @@ class Analysis:
                     
                     for i in range(len(rand_x)):
                         distance = 0.0
-                        distance = (x1-rand_x[i])**2 + (y1-rand_y[i])**2
+                        distance = (x1 - rand_x[i])**2 + (y1 - rand_y[i])**2
+                        #print("CRU radius")
+                        #print(radii[cru_nr])
                         
-                        if(rand_x[i]**2 + rand_y[i]**2 < radii[cru_nr]*radii[cru_nr]):
+                        
+                        if( (rand_x[i]*rand_x[i] + rand_y[i]*rand_y[i]) < radii[cru_nr]*radii[cru_nr]):
                             count_in_cru += 1.0
+                            
+                            #print("counted +1, distance from center")
+                            #print((rand_x[i]**2 + rand_y[i]**2))
+                            
                             if(distance < radiusOfInfluence**2):
                                 count_in_roi += 1.0
+                                
                         
                     
                     dists_nn.append(dists[0])
@@ -1455,8 +1463,8 @@ class Analysis:
             sim_data_df.at[index,"%snn_mean" % knn ] = dists_knn.mean()*1000.0
             sim_data_df.at[index,"%snn_std" % knn ] = dists_knn.std()*1000.0
             sim_data_df.at[index,"norm_ryr_convex_hull_mean"] = norm_ryr_convex_hull_areas.mean()*1000.0*1000.0
-            sim_data_df.at[index,"norm_area_convex_hull_mean"] = norm_area_convex_hull_areas.mean()*1000.0*1000.0
-            sim_data_df.at[index,"norm_jsr_convex_hull_mean"] = norm_jsr_convex_hull_areas.mean()*1000.0*1000.0
+            sim_data_df.at[index,"norm_area_convex_hull_mean"] = norm_area_convex_hull_areas.mean()
+            sim_data_df.at[index,"norm_jsr_convex_hull_mean"] = norm_jsr_convex_hull_areas.mean()/1000.0
             sim_data_df.at[index,"ryrs_in_roi_mean"] = ryrs_in_roi.mean()
             sim_data_df.at[index,"mean_R_at_half_cum_RDF"] = rs_at_half_cum_RDF.mean()*1000.0
             sim_data_df.at[index,"mean_occupancy"] = occupancies.mean()
