@@ -1355,6 +1355,7 @@ class Analysis:
             dists_nn = []
             dists_4nn = []
             dists_knn = []
+            jsr_vol = []
             norm_ryr_convex_hull_areas = []
             norm_area_convex_hull_areas = []
             norm_jsr_convex_hull_areas = []
@@ -1435,13 +1436,18 @@ class Analysis:
                 norm_area_convex_hull_areas.append(convex_hull_area/(np.pi*radii[cru_nr]*radii[cru_nr]))
                 norm_jsr_convex_hull_areas.append(convex_hull_area/((4.0/3.0)*np.pi*radii[cru_nr]*radii[cru_nr]*radii[cru_nr]))
                 
-                occupancies_per_vol.append(count_in_roi/((4.0/3.0)*np.pi*radii[cru_nr]*radii[cru_nr]*radii[cru_nr]))
-                occupancies_times_vol.append(count_in_roi*((4.0/3.0)*np.pi*radii[cru_nr]*radii[cru_nr]*radii[cru_nr]))
+                
+                jsr_vol.append((4.0/3.0)*np.pi*radii[cru_nr]*radii[cru_nr]*radii[cru_nr])
+                
                 
                 if (count_in_cru > 0.0):
                     occupancies.append(count_in_roi/count_in_cru)
-                else:
-                    occupancies.append(0.0)
+                    occupancies_per_vol.append(count_in_roi/(count_in_cru*(4.0/3.0)*np.pi*radii[cru_nr]*radii[cru_nr]*radii[cru_nr]))
+                    occupancies_times_vol.append((count_in_roi/count_in_cru)*((4.0/3.0)*np.pi*radii[cru_nr]*radii[cru_nr]*radii[cru_nr]))
+                #else:
+                #    occupancies.append(0.0)
+                #    occupancies_per_vol.append(0.0)
+                #    occupancies_times_vol.append(0.0)
             
 
     
@@ -1449,6 +1455,7 @@ class Analysis:
             dists_nn = np.array(dists_nn)
             dists_4nn = np.array(dists_4nn)
             dists_knn = np.array(dists_knn)
+            jsr_vol = np.array(jsr_vol)
             norm_ryr_convex_hull_areas = np.array(norm_ryr_convex_hull_areas)
             norm_area_convex_hull_areas = np.array(norm_area_convex_hull_areas)
             norm_jsr_convex_hull_areas = np.array(norm_jsr_convex_hull_areas)
@@ -1458,11 +1465,14 @@ class Analysis:
             occupancies_per_vol = np.array(occupancies_per_vol)
             occupancies_times_vol = np.array(occupancies_times_vol)
             
+            
+            
 
             sim_data_df.at[index,"nn_mean"] = dists_nn.mean()*1000.0
             sim_data_df.at[index,"nn_std"] = dists_nn.std()*1000.0
             sim_data_df.at[index,"4nn_mean"] = dists_4nn.mean()*1000.0
             sim_data_df.at[index,"4nn_std"] = dists_4nn.std()*1000.0
+            sim_data_df.at[index,"jsr_vol"] = jsr_vol.mean()
             sim_data_df.at[index,"%snn_mean" % knn ] = dists_knn.mean()*1000.0
             sim_data_df.at[index,"%snn_std" % knn ] = dists_knn.std()*1000.0
             sim_data_df.at[index,"norm_ryr_convex_hull_mean"] = norm_ryr_convex_hull_areas.mean()*1000.0*1000.0
