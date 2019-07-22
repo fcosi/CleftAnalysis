@@ -1377,7 +1377,7 @@ class Analysis:
                 rand_x = np.random.uniform(-radii[cru_nr],radii[cru_nr],100)
                 rand_y = np.random.uniform(-radii[cru_nr],radii[cru_nr],100)
                               
-                for i in range(rand_x):
+                for i in range(len(rand_x)):
                     if( (rand_x[i]*rand_x[i] + rand_y[i]*rand_y[i]) < radii[cru_nr]*radii[cru_nr]):
                         count_in_cru += 1.0
                 
