@@ -1370,11 +1370,17 @@ class Analysis:
                 count_in_cru = 0.0
                 count_in_roi = 0.0
                 
+                roi_index_list = []
+                
                 #rand_x = np.random.uniform(-300.0,300.0,100)
                 #rand_y = np.random.uniform(-300.0,300.0,100)
                 rand_x = np.random.uniform(-radii[cru_nr],radii[cru_nr],100)
                 rand_y = np.random.uniform(-radii[cru_nr],radii[cru_nr],100)
                               
+                for i in range(rand_x):
+                    if( (rand_x[i]*rand_x[i] + rand_y[i]*rand_y[i]) < radii[cru_nr]*radii[cru_nr]):
+                        count_in_cru += 1.0
+                
                 
                 for i in range(0,len(ryr_location[0])):
                     dists = []
@@ -1391,22 +1397,23 @@ class Analysis:
                     
                     dists.sort()
                     
-                    for i in range(len(rand_x)):
+                    for j in range(len(rand_x)):
                         distance = 0.0
-                        distance = (x1 - rand_x[i])**2 + (y1 - rand_y[i])**2
+                        distance = (x1 - rand_x[j])**2 + (y1 - rand_y[j])**2
                         #print("CRU radius")
                         #print(radii[cru_nr])
                         
                         
-                        if( (rand_x[i]*rand_x[i] + rand_y[i]*rand_y[i]) < radii[cru_nr]*radii[cru_nr]):
-                            count_in_cru += 1.0
+                        if( (rand_x[j]*rand_x[j] + rand_y[j]*rand_y[j]) < radii[cru_nr]*radii[cru_nr]):
+                            #count_in_cru += 1.0
                             
-                            #print("counted +1, distance from center")
-                            #print((rand_x[i]**2 + rand_y[i]**2))
+                            ##print("counted +1, distance from center")
+                            ##print((rand_x[i]**2 + rand_y[i]**2))
                             
                             if(distance < radiusOfInfluence**2):
-                                count_in_roi += 1.0
-                                
+                                roi_index_list.append(j)
+                                #count_in_roi += 1.0
+                    
                         
                     
                     dists_nn.append(dists[0])
@@ -1421,6 +1428,8 @@ class Analysis:
                     
                     dists_in_roi = [r for r in dists if r <= radiusOfInfluence]
                     ryrs_in_roi.append(len(dists_in_roi))
+                    
+                count_in_roi = len(set(roi_index_list))    
                     
                 points = np.array([ryr_location[0],ryr_location[1]]).T
                 convex_hull_area = 0.0
