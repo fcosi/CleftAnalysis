@@ -1363,12 +1363,16 @@ class Analysis:
             rs_at_half_cum_RDF = []
             occupancies = []
             occupancies_per_vol = []
-            occupancies_times_vol = []
+            occupancies_times_area = []
             
             for cru_nr, ryr_location in enumerate(ryr_locations):
                 
                 count_in_cru = 0.0
                 count_in_roi = 0.0
+                
+                count_in_roi30 = 0.0
+                count_in_roi40 = 0.0
+                count_in_roi60 = 0.0
                 
                 roi_index_list = []
                 
@@ -1412,6 +1416,9 @@ class Analysis:
                             
                             if(distance < radiusOfInfluence**2):
                                 roi_index_list.append(j)
+                                
+                            #if(distance < radiusOfInfluence**2):
+                            #    roi_index_list.append(j)
                                 #count_in_roi += 1.0
                     
                         
@@ -1450,9 +1457,17 @@ class Analysis:
                 
                 
                 if (count_in_cru > 0.0):
-                    occupancies.append(count_in_roi/count_in_cru)
-                    occupancies_per_vol.append(count_in_roi/(count_in_cru*(4.0/3.0)*np.pi*radii[cru_nr]*radii[cru_nr]*radii[cru_nr]))
-                    occupancies_times_vol.append((count_in_roi/count_in_cru)*((4.0/3.0)*np.pi*radii[cru_nr]*radii[cru_nr]*radii[cru_nr]))
+                    #occupancies.append(count_in_roi/count_in_cru)
+                    #occupancies_per_vol.append(count_in_roi/(count_in_cru*(4.0/3.0)*np.pi*radii[cru_nr]*radii[cru_nr]*radii[cru_nr]))
+                    #occupancies_times_vol.append((count_in_roi/count_in_cru)*((4.0/3.0)*np.pi*radii[cru_nr]*radii[cru_nr]*radii[cru_nr]))
+                    
+                    max_occupancy_area = np.pi*radiusOfInfluence*radiusOfInfluence*float(len(ryr_location[0]))
+                    cru_area = np.pi*count_in_roi*radii[cru_nr]*radii[cru_nr]
+                    occupancy_fraction = count_in_roi/count_in_cru
+                    occupancies.append(occupancy_fraction*cru_area/max_occupancy_area)                    
+                    #occupancies_per_vol.append(count_in_roi/(count_in_cru*(4.0/3.0)*np.pi*radii[cru_nr]*radii[cru_nr]*radii[cru_nr]))
+                    occupancies_times_area.append(occupancy_fraction*cru_area)
+                    
                 #else:
                 #    occupancies.append(0.0)
                 #    occupancies_per_vol.append(0.0)
@@ -1471,8 +1486,8 @@ class Analysis:
             ryrs_in_roi = np.array(ryrs_in_roi)
             rs_at_half_cum_RDF = np.array(rs_at_half_cum_RDF)
             occupancies = np.array(occupancies)
-            occupancies_per_vol = np.array(occupancies_per_vol)
-            occupancies_times_vol = np.array(occupancies_times_vol)
+            #occupancies_per_vol = np.array(occupancies_per_vol)
+            occupancies_times_area = np.array(occupancies_times_area)
             
             
             
@@ -1490,8 +1505,9 @@ class Analysis:
             sim_data_df.at[index,"ryrs_in_roi_mean"] = ryrs_in_roi.mean()
             sim_data_df.at[index,"mean_R_at_half_cum_RDF"] = rs_at_half_cum_RDF.mean()*1000.0
             sim_data_df.at[index,"mean_occupancy"] = occupancies.mean()
-            sim_data_df.at[index,"mean_occupancy_per_vol"] = occupancies_per_vol.mean()
-            sim_data_df.at[index,"mean_occupancy_times_vol"] = occupancies_times_vol.mean()
+            #sim_data_df.at[index,"mean_occupancy_per_vol"] = occupancies_per_vol.mean()
+            sim_data_df.at[index,"mean_occupancy_times_area"] = occupancies_times_area.mean()
+            #sim_data_df.at[index,"mean_occupancy_times_area_per_ryr"] = occupancies_times_area_per_ryr.mean()
         
         return sim_data_df
     
