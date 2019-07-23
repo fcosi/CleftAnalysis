@@ -1462,7 +1462,7 @@ class Analysis:
                     #occupancies_times_vol.append((count_in_roi/count_in_cru)*((4.0/3.0)*np.pi*radii[cru_nr]*radii[cru_nr]*radii[cru_nr]))
                     
                     max_occupancy_area = np.pi*radiusOfInfluence*radiusOfInfluence*float(len(ryr_location[0]))
-                    cru_area = np.pi*count_in_roi*radii[cru_nr]*radii[cru_nr]
+                    cru_area = np.pi*radii[cru_nr]*radii[cru_nr]
                     occupancy_fraction = count_in_roi/count_in_cru
                     occupancies.append(occupancy_fraction*cru_area/max_occupancy_area)                    
                     #occupancies_per_vol.append(count_in_roi/(count_in_cru*(4.0/3.0)*np.pi*radii[cru_nr]*radii[cru_nr]*radii[cru_nr]))
