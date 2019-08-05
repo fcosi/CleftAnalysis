@@ -1352,6 +1352,11 @@ class Analysis:
             ex = extract.extract(folder)
             ryr_numbers, lcc_numbers, radii, ryr_locations, lcc_locations = ex.crusInfo(getLocations = True, getRadius = True)
             
+            #print("length of lcc_locations")
+            #print(len(lcc_locations))
+            #print("LCC locations fro CRU nr 0:")
+            #print(lcc_locations[0])
+            
             dists_nn = []
             dists_4nn = []
             dists_knn = []
@@ -1361,7 +1366,9 @@ class Analysis:
             norm_cru_convex_hull_areas = []
             ryrs_in_roi = []
             rs_at_half_cum_RDF = []
-            occupancies = []
+            occupancies = []            
+            occupancies_lcc = []
+            
             occupancies_per_vol = []
             occupancies_times_area = []
             
@@ -1473,6 +1480,34 @@ class Analysis:
                 #    occupancies_per_vol.append(0.0)
                 #    occupancies_times_vol.append(0.0)
             
+                
+                lcc_location = lcc_locations[cru_nr]
+                for i in range(len(lcc_location[0])):
+                    
+                    #print(lcc_location)
+                    
+                    x1 = lcc_location[0][i]
+                    y1 = lcc_location[1][i]
+                    
+                    for j in range(len(rand_x)):
+                        distance = 0.0
+                        distance = (x1 - rand_x[j])**2 + (y1 - rand_y[j])**2
+                           
+                        
+                        if( (rand_x[j]*rand_x[j] + rand_y[j]*rand_y[j]) < radii[cru_nr]*radii[cru_nr]):
+
+                            if(distance < radiusOfInfluence**2):
+                                roi_index_list.append(j)
+                                
+                                
+                count_in_roi = len(set(roi_index_list))  
+                
+                if (count_in_cru > 0.0):
+                    
+                    max_occupancy_area = np.pi*radiusOfInfluence*radiusOfInfluence*float(len(ryr_location[0]) + len(lcc_location[0]))
+                    cru_area = np.pi*radii[cru_nr]*radii[cru_nr]
+                    occupancy_fraction = count_in_roi/count_in_cru
+                    occupancies_lcc.append(occupancy_fraction*cru_area/max_occupancy_area)  
 
     
     
@@ -1488,6 +1523,7 @@ class Analysis:
             occupancies = np.array(occupancies)
             #occupancies_per_vol = np.array(occupancies_per_vol)
             occupancies_times_area = np.array(occupancies_times_area)
+            occupancies_lcc = np.array(occupancies_lcc)
             
             
             
@@ -1505,6 +1541,8 @@ class Analysis:
             sim_data_df.at[index,"ryrs_in_roi_mean"] = ryrs_in_roi.mean()
             sim_data_df.at[index,"mean_R_at_half_cum_RDF"] = rs_at_half_cum_RDF.mean()*1000.0
             sim_data_df.at[index,"mean_occupancy"] = occupancies.mean()
+            sim_data_df.at[index,"mean_occupancy_with_lcc"] = occupancies_lcc.mean()
+            
             #sim_data_df.at[index,"mean_occupancy_per_vol"] = occupancies_per_vol.mean()
             sim_data_df.at[index,"mean_occupancy_times_area"] = occupancies_times_area.mean()
             #sim_data_df.at[index,"mean_occupancy_times_area_per_ryr"] = occupancies_times_area_per_ryr.mean()
