@@ -1769,6 +1769,31 @@ class Analysis:
         orth_poly = cp.orth_ttr(polyOrder,distr)
         func_approx = cp.fit_regression(orth_poly, xdata, ydata, rule = 'T')
         return func_approx
+
+    def addRegressionFct2Dict(self, extract_data, params_vari, dist, obj, dictio,
+                              polyOrder = 1, alpha = np.logspace(-0.0, -6.0, num=14)):
+        '''
+        takes a dictionary (dictio) where to store regression function
+        uses lasso_regression fct to compute regression
+       Parameters
+        ----------
+        - extract_data: Biomarker DF
+        - params_vari: list of varied parameters
+        - dist: uniform distribution of the varied parameter range
+        - obj: which value to analyse regression with 
+        - dictio: dictionary where to insert regression fct
+        - polyOrder: order of the polynomial to be fitted
+        - alphas: list of alphas, alpha penalizes the L1-norm of polynomial coefficients
+        
+        '''
+        assert type(dictio) == dict, "no dictionary as input!"
+            
+        res = self.lasso_regression(extract_data, params_vari, dist,
+                             polyOrder = polyOrder, alphas = alpha,
+                             objective=obj, printInfo=True)
+            
+        func_approx = res['func_approx']
+        dictio[obj] = func_approx
     
     def lasso_regression(self, sim_data_df, params_vari, distr, alphas, polyOrder = 3, 
                       objective = "APD50_mean", kfold = 10, printInfo = False):
