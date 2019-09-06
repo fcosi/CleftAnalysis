@@ -1893,6 +1893,55 @@ class Analysis:
         return res
     
 
+    def computeParameterHypercube(self, functionsDF, biomarkers, biomlimits,
+                                  biomarker_mean, param_number,
+                                  percent = 1):
+        """
+        move into every parameter direction and check if any biomarker limit is exceeded
+        given functions from regression, biomarker list, their limits and param number
+        
+        ---
+        Parameters:
+        functionsDF: 
+        biomarkers: 
+        biomlimits:
+        biomarker_mean: 
+        param_number:
+        
+        ---
+        Returns
+        - Prints objectieves and values that exceeded
+        or
+        - Percent value of maximal radius variation (when percent is set to incremental)
+        """
+        import itertools as it        
+        
+        if type(percent) in [float, int]:
+            
+            ratio = percent/100
+            # it.product gives all possible combinations
+            for combi in it.product([1 - ratio, 1 + ratio], repeat=param_number):
+                for obj in biomarkers:
+                    value = functionsDF[obj](*combi)*biomarker_mean[obj]
+                    if (value<biomlimits[obj][0] or value>biomlimits[obj][1]):
+                        print("found exceeding limits in objective: {}\n\t with the value: {}\n\t in set: {}".format(obj, value, combi))
+        elif percent in ["i", "inc", "incr", "incremental", "increment"]:
+            print("Incrementally looking for percentage of exceeding parameter radius, this could take some time!")
+            increment = 0.1
+            percent = 0.1
+            contin = True
+            while percent<90 and contin:
+                ratio = percent/100
+                for combi in it.product([1 - ratio, 1 + ratio], repeat=param_number):
+                    for obj in biomarkers:
+                        value = functionsDF[obj](*combi)*biomarker_mean[obj]
+                        if (value<biomlimits[obj][0] or value>biomlimits[obj][1]):
+                            contin = False
+                            break
+                percent+=increment
+            print("Percentage of max parameter radius: {:.4f}".format(percent-2*increment))
+        
+
     def calculate_regression_error(self, sim_data_df, params_vari, func_approx,
                       objective = "APD50_mean", printInfo = False):
         
