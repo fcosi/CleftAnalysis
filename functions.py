@@ -1895,18 +1895,21 @@ class Analysis:
 
     def computeParameterHypercube(self, functionsDF, biomarkers, biomlimits,
                                   biomarker_mean, param_number,
-                                  percent = 1):
+                                  percent = 1, increment=0.1):
         """
         move into every parameter direction and check if any biomarker limit is exceeded
         given functions from regression, biomarker list, their limits and param number
         
         ---
-        Parameters:
-        functionsDF: 
-        biomarkers: 
-        biomlimits:
-        biomarker_mean: 
-        param_number:
+        Parameters
+        functionsDF: dict with regression fcts as values and biomarkers as keys
+        biomarkers: list of biomarkers to analyse
+        biomlimits: max and min bounds of biomarks
+        biomarker_mean: mean biomarker value from dataset
+        param_number: total num of parameter to scan
+        percent: max radius percent to check, if number, if "i", "inc" or similar goes
+                 incremental
+        increment: percentage of increment when in incremental mode
         
         ---
         Returns
@@ -1927,7 +1930,9 @@ class Analysis:
                         print("found exceeding limits in objective: {}\n\t with the value: {}\n\t in set: {}".format(obj, value, combi))
         elif percent in ["i", "inc", "incr", "incremental", "increment"]:
             print("Incrementally looking for percentage of exceeding parameter radius, this could take some time!")
-            increment = 0.1
+            if increment < 0.01:
+                print("increment = {}\texpect long computation times".format(increment))
+            increment
             percent = 0.1
             contin = True
             while percent<90 and contin:
