@@ -418,7 +418,7 @@ class SparkAnalysis:
         return int(sum(count))        
 
     def getQuarkSparkInfo(self, channelDF, eventduration = 20, getCleftnumber = False,
-                          getSparkTimeIntervals = False, getMaxChannelsDurations = False, getFluo4Data = False):
+                          getSparkTimeIntervals = False, getMaxChannelsDurations = False, getFluo4Data = False, start_time = -np.inf, end_time=np.inf):
         """
         gets Quarks and Sparks given cleftlog DataFrame and optional number of clefts firing
         also returns np.array of peak bulk Ca for each cleft
@@ -437,8 +437,10 @@ class SparkAnalysis:
             channelDF = channelDF.rename(index=str, columns={"ca_exp": "bulkCa"})
             print("extract fluo4 data")
             
-        
+        # INSERT HERE TIME WINDOW AND CONSTRAINTS! MISSING WITH SPARKS!
         oneRyR = channelDF[channelDF.openRyR > 0]
+        oneRyR = oneRyR[oneRyR.time > start_time]
+        oneRyR = oneRyR[oneRyR.time < end_time]
         moreRyR = oneRyR[oneRyR.openRyR > 1]
         
         
@@ -569,7 +571,7 @@ class SparkAnalysis:
             # spark_data_df.at[counter,'LCCtot'] = sum(channels[1])
             
             # get sparks, quarks counts and mean peak Calcium
-            quarks, sparks, peaks, FDHM, FD90=self.getQuarkSparkInfo(channelDF, eventduration=20)
+            quarks, sparks, peaks, FDHM, FD90=self.getQuarkSparkInfo(channelDF, eventduration=20, start_time=start_time, end_time=end_time)
             spark_data_df.at[counter, 'quarks'] = int(quarks)
             spark_data_df.at[counter, 'sparks'] = int(sparks)
 
@@ -603,7 +605,7 @@ class SparkAnalysis:
             
             
             if fromCSV:
-                quarks, sparks, peaks, FDHM, FD90=self.getQuarkSparkInfo(channelDF, eventduration=20, getFluo4Data = True)
+                quarks, sparks, peaks, FDHM, FD90=self.getQuarkSparkInfo(channelDF, eventduration=20, getFluo4Data = True, start_time=start_time, end_time=end_time)
   
                 spark_data_df.at[counter, 'Ca_exp_peak_mean'] = peaks.mean()
                 
