@@ -437,7 +437,7 @@ class SparkAnalysis:
             channelDF = channelDF.rename(index=str, columns={"ca_exp": "bulkCa"})
             print("extract fluo4 data")
             
-        # INSERT HERE TIME WINDOW AND CONSTRAINTS! MISSING WITH SPARKS!
+        
         oneRyR = channelDF[channelDF.openRyR > 0]
         oneRyR = oneRyR[oneRyR.time > start_time]
         oneRyR = oneRyR[oneRyR.time < end_time]
