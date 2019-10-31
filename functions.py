@@ -1773,7 +1773,8 @@ class Analysis:
         return func_approx
 
     def addRegressionFct2Dict(self, extract_data, params_vari, dist, obj, dictio,
-                              polyOrder = 1, alpha = np.logspace(-0.0, -6.0, num=14)):
+                              polyOrder = 1, alpha = np.logspace(-0.0, -6.0, num=14),
+                              wholeInfo = False):
         '''
         takes a dictionary (dictio) where to store regression function
         uses lasso_regression fct to compute regression
@@ -1786,6 +1787,7 @@ class Analysis:
         - dictio: dictionary where to insert regression fct
         - polyOrder: order of the polynomial to be fitted
         - alphas: list of alphas, alpha penalizes the L1-norm of polynomial coefficients
+        - wholeInfo: when True saves the whole dict into the new dict
         
         '''
         assert type(dictio) == dict, "no dictionary as input!"
@@ -1793,9 +1795,12 @@ class Analysis:
         res = self.lasso_regression(extract_data, params_vari, dist,
                              polyOrder = polyOrder, alphas = alpha,
                              objective=obj, printInfo=True)
-            
-        func_approx = res['func_approx']
-        dictio[obj] = func_approx
+        
+        if whole_Info:
+            dictio[obj] = res
+        else:
+            func_approx = res['func_approx']
+            dictio[obj] = func_approx
     
     def lasso_regression(self, sim_data_df, params_vari, distr, alphas, polyOrder = 3, 
                       objective = "APD50_mean", kfold = 10, printInfo = False):
@@ -1816,7 +1821,7 @@ class Analysis:
         
         Returns
         ----------
-        - a disctionary with
+        dictionary with
             - chaospy approximated fit function
             - alpha that maximazes the cross validation score
             - cross validation score
