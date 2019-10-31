@@ -1796,7 +1796,7 @@ class Analysis:
                              polyOrder = polyOrder, alphas = alpha,
                              objective=obj, printInfo=True)
         
-        if whole_Info:
+        if wholeInfo:
             dictio[obj] = res
         else:
             func_approx = res['func_approx']
