@@ -1868,6 +1868,7 @@ class Analysis:
                 val = cross_val_score(linreg,data[predictors],data[objective],cv=kfold).mean()
                 r2_val = reg.score(data[predictors],data[objective])
             else:
+                # Lasso fct from sklearn.linear_model
                 lassoreg = Lasso(alpha=alpha,normalize=True, max_iter=1e5)
                 lassoreg.fit(data[predictors],data[objective])
                 val = cross_val_score(lassoreg,data[predictors],data[objective],cv=kfold).mean()
