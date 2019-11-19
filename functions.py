@@ -1899,7 +1899,22 @@ class Analysis:
         res['func_approx'] = func_approx
         
         return res
-    
+
+    def optimizeLassoPCE(self, sim_data_df, params_vari, distr, alpha0 = 0.5,
+                         polyOrder = 3, objective = "APD50_mean", kfold = 10,
+                         with_respect_to = 'cross_val_score'):
+        """
+        Find optimal alpha value of Lasso regression PCE given some init val alpha0
+        """
+        from scipy.optimize import minimize
+        
+        arguments=(sim_data_df, params_vari, distr, polyOrder, objective, kfold)
+        def fun(alpha, *arguments):
+            return 1 - self.lasso_regression(sim_data_df, params_vari, distr, alphas=alpha, polyOrder = polyOrder, objective = objective, kfold = kfold)[with_respect_to]
+        
+        res = minimize(fun, alpha0, args=arguments)
+        
+        return res
 
     def computeParameterHypercube(self, functionsDF, biomarkers, biomlimits,
                                   biomarker_mean, param_number,
