@@ -1856,7 +1856,8 @@ class Analysis:
             temp = np.zeros(len(xdata))
             for j in range(len(xdata)):
                 temp[j] = orth_poly[i](*xdata[j])
-            data[colname] = temp
+            #data[colname] = temp
+            data = data.assign(**{colname: temp})
        
         predictors = ['phi_%d'%i for i in range(len(orth_poly))]
         
@@ -1902,17 +1903,22 @@ class Analysis:
 
     def optimizeLassoPCE(self, sim_data_df, params_vari, distr, alpha0 = 0.5,
                          polyOrder = 3, objective = "APD50_mean", kfold = 10,
-                         with_respect_to = 'cross_val_score'):
+                         with_respect_to = 'cross_val_score', options=False):
         """
         Find optimal alpha value of Lasso regression PCE given some init val alpha0
         """
         from scipy.optimize import minimize
+        bnds = ((0,1),)
         
         arguments=(sim_data_df, params_vari, distr, polyOrder, objective, kfold)
+        
         def fun(alpha, *arguments):
             return 1 - self.lasso_regression(sim_data_df, params_vari, distr, alphas=alpha, polyOrder = polyOrder, objective = objective, kfold = kfold)[with_respect_to]
         
-        res = minimize(fun, alpha0, args=arguments)
+        if options and type(options) == dict:
+            res = minimize(fun, alpha0, args=arguments, bounds=bnds, options=options)
+        else:
+            res = minimize(fun, alpha0, args=arguments, bounds=bnds)
         
         return res
 
