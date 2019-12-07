@@ -1774,7 +1774,7 @@ class Analysis:
 
     def addRegressionFct2Dict(self, extract_data, params_vari, dist, obj, dictio,
                               polyOrder = 1, alpha = np.logspace(-0.0, -6.0, num=14),
-                              wholeInfo = False):
+                              wholeInfo = False, differentkey = False):
         '''
         takes a dictionary (dictio) where to store regression function
         uses lasso_regression fct to compute regression
@@ -1788,6 +1788,7 @@ class Analysis:
         - polyOrder: order of the polynomial to be fitted
         - alphas: list of alphas, alpha penalizes the L1-norm of polynomial coefficients
         - wholeInfo: when True saves the whole dict into the new dict
+        - if different key is set then to adress different dict keys than objects
         
         '''
         assert type(dictio) == dict, "no dictionary as input!"
@@ -1795,12 +1796,13 @@ class Analysis:
         res = self.lasso_regression(extract_data, params_vari, dist,
                              polyOrder = polyOrder, alphas = alpha,
                              objective=obj, printInfo=True)
-        
+        key = obj
+        if differentkey: key = differentkey 
         if wholeInfo:
-            dictio[obj] = res
+            dictio[key] = res
         else:
             func_approx = res['func_approx']
-            dictio[obj] = func_approx
+            dictio[key] = func_approx
     
     def lasso_regression(self, sim_data_df, params_vari, distr, alphas, polyOrder = 3, 
                       objective = "APD50_mean", kfold = 10, printInfo = False):
